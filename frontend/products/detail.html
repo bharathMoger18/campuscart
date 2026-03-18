@@ -1,0 +1,34 @@
+<!-- products/detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Product Details — CampusCart</title>
+
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/components.css" />
+    <link rel="stylesheet" href="../css/theme.css" />
+  </head>
+  <body>
+    <header id="site-navbar"></header>
+
+    <main class="container">
+      <div id="productDetail" class="product-detail">
+        <!-- Content populated by js -->
+        <div class="loading">Loading product...</div>
+      </div>
+
+      <section id="reviewsSection" class="reviews-section">
+        <h3>Reviews</h3>
+        <div id="reviewsList"></div>
+      </section>
+    </main>
+
+    <footer id="site-footer"></footer>
+
+    <script type="module" src="../js/main.js"></script>
+    <script type="module" src="../js/product_detail.js"></script>
+  </body>
+</html>

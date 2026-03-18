@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Chat — CampusCart</title>
+
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+
+    <style>
+      /* chat page specific styles (kept local) */
+      main.container {
+        max-width: 1000px;
+        margin: 1.5rem auto;
+      }
+      .chat-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 1rem;
+        min-height: 60vh;
+      }
+      .chat-panel {
+        background: #fff;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(2, 6, 23, 0.04);
+        display: flex;
+        flex-direction: column;
+      }
+      .messages {
+        flex: 1;
+        overflow: auto;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+      .message {
+        max-width: 78%;
+        padding: 0.6rem 0.9rem;
+        border-radius: 12px;
+        line-height: 1.2;
+        word-wrap: break-word;
+      }
+      .msg-outgoing {
+        background: #2563eb;
+        color: #fff;
+        margin-left: auto;
+        border-bottom-right-radius: 4px;
+      }
+      .msg-incoming {
+        background: #f1f5f9;
+        color: #111827;
+        margin-right: auto;
+        border-bottom-left-radius: 4px;
+      }
+      .msg-meta {
+        font-size: 0.78rem;
+        color: #6b7280;
+        margin-top: 4px;
+      }
+      .chat-input {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.6rem;
+      }
+      .chat-input input[type='text'] {
+        flex: 1;
+        padding: 0.6rem;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        font-size: 1rem;
+      }
+      .chat-input button {
+        padding: 0.6rem 0.9rem;
+        border-radius: 8px;
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      .chat-input button:hover {
+        background: #1d4ed8;
+      }
+      .side-panel {
+        background: #fff;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(2, 6, 23, 0.03);
+      }
+      .conversation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.6rem;
+      }
+      .conversation-header h2 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+      .empty {
+        text-align: center;
+        color: #6b7280;
+        padding: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header id="site-navbar"></header>
+
+    <main class="container">
+      <div class="chat-wrapper">
+        <section class="chat-panel" id="chatPanel">
+          <div class="conversation-header">
+            <div>
+              <h2 id="convTitle">Conversation</h2>
+              <div
+                id="convMeta"
+                class="meta"
+                style="font-size: 0.9rem; color: #6b7280"
+              ></div>
+            </div>
+            <div id="statusBadge" class="meta"></div>
+          </div>
+
+          <div id="messages" class="messages">
+            <div class="empty">Loading messages…</div>
+          </div>
+
+          <form id="sendForm" class="chat-input" style="margin-top: 8px">
+            <input
+              id="messageInput"
+              type="text"
+              placeholder="Write a message…"
+              autocomplete="off"
+            />
+            <button type="submit">Send</button>
+          </form>
+        </section>
+
+        <aside class="side-panel">
+          <h3>Conversation Info</h3>
+          <div id="infoList">
+            <p class="meta">Loading…</p>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <footer id="site-footer"></footer>
+
+    <!-- 🔹 New: global script for navbar/footer and chat logic -->
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/chat.js"></script>
+  </body>
+</html>

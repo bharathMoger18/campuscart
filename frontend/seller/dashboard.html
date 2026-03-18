@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seller Dashboard | CampusCart</title>
+
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/components.css" />
+
+    <!-- main navbar + helpers -->
+    <script type="module" src="../js/main.js" defer></script>
+    <!-- dashboard script -->
+    <script type="module" src="./js/dashboard.js" defer></script>
+
+    <style>
+      /* Enhanced modern UI styles specific to this page */
+      :root {
+        --card-bg: #fff;
+        --muted: #6b7280;
+        --accent: #0ea5a4;
+      }
+      .page-title {
+        font-size: 2.25rem;
+        margin: 1.25rem 0;
+      }
+      .summary-row {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      #seller-summary {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        margin: 1rem 0 1.25rem;
+      }
+      .stat-card {
+        background: var(--card-bg);
+        padding: 1.1rem 1.2rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(2, 6, 23, 0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+      }
+      .stat-card .label {
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+      .stat-card .value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+      }
+
+      .card {
+        background: var(--card-bg);
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(2, 6, 23, 0.04);
+      }
+
+      .top-products {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+      .top-product {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        padding: 0.5rem;
+        border-radius: 8px;
+        background: #fafafa;
+        border: 1px solid rgba(2, 6, 23, 0.03);
+      }
+      .top-product img {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      .summary-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        font-weight: 700;
+        font-size: 1rem;
+      }
+
+      /* data table looks */
+      .chart-section {
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(2, 6, 23, 0.04);
+        background: var(--card-bg);
+        margin-bottom: 1.25rem;
+      }
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card-bg);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 6px 18px rgba(2, 6, 23, 0.04);
+      }
+      .data-table thead {
+        background: #f8fafc;
+      }
+      .data-table th,
+      .data-table td {
+        padding: 0.9rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.95rem;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.78rem;
+      }
+      .status-pending {
+        background: #fff7ed;
+        color: #92400e;
+      }
+      .status-paid {
+        background: #ecfeff;
+        color: #036666;
+      }
+      .status-shipped {
+        background: #eef2ff;
+        color: #3730a3;
+      }
+      .status-delivered {
+        background: #ecfdf5;
+        color: #065f46;
+      }
+      .status-cancelled {
+        background: #fff1f2;
+        color: #9f1239;
+      }
+      .status-refund_requested {
+        background: #fff7f0;
+        color: #92400e;
+      }
+      .status-refunded {
+        background: #fff1f2;
+        color: #9f1239;
+      }
+
+      .actions .btn {
+        margin-right: 0.5rem;
+      }
+
+      @media (max-width: 900px) {
+        .two-col {
+          grid-template-columns: 1fr;
+        }
+        .page-title {
+          font-size: 1.6rem;
+        }
+      }
+      @media (max-width: 640px) {
+        .stat-card .value {
+          font-size: 1.25rem;
+        }
+        .data-table th,
+        .data-table td {
+          font-size: 0.85rem;
+          padding: 0.6rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header id="site-navbar"></header>
+
+    <main class="container">
+      <div class="summary-row">
+        <h1 class="page-title">Seller Dashboard</h1>
+        <div
+          style="
+            margin-left: auto;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+          "
+        >
+          <a href="/seller/orders.html" class="btn btn-primary"
+            >View All Orders</a
+          >
+          <a class="btn btn-ghost" href="/../index.html">Back to Store</a>
+          <a href="./products.html" class="btn btn-outline">My Products</a>
+        </div>
+      </div>
+
+      <!-- summary cards -->
+      <section id="seller-summary" aria-labelledby="summaryHeading">
+        <div class="stat-card">
+          <div class="label">Total Products</div>
+          <div id="totalProducts" class="value">0</div>
+          <div style="color: var(--muted); font-weight: 600; font-size: 0.9rem">
+            Active and listed
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="label">Total Orders</div>
+          <div id="totalOrders" class="value">0</div>
+          <div style="color: var(--muted); font-weight: 600; font-size: 0.9rem">
+            All time
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="label">Total Revenue</div>
+          <div id="totalRevenue" class="value">₹0.00</div>
+          <div style="color: var(--muted); font-weight: 600; font-size: 0.9rem">
+            Net revenue
+          </div>
+        </div>
+      </section>
+
+      <!-- refunds and top products -->
+      <section class="two-col">
+        <div class="card" id="refundsCard">
+          <h3 style="margin: 0 0 0.8rem 0">Refunds Summary</h3>
+          <div id="refundsSummary" class="summary-list">
+            <div style="color: var(--muted); font-weight: 600">Loading...</div>
+          </div>
+        </div>
+
+        <aside class="card">
+          <h3 style="margin: 0 0 0.6rem 0">Top Products</h3>
+          <div id="topProducts" class="top-products">
+            <div style="color: var(--muted)">No top products yet</div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- chart -->
+      <section class="chart-section" aria-labelledby="chartHeading">
+        <h2 id="chartHeading">Monthly Sales Overview</h2>
+        <canvas
+          id="salesChart"
+          aria-label="Monthly sales chart"
+          role="img"
+          style="max-height: 320px; width: 100%"
+        ></canvas>
+      </section>
+
+      <!-- recent orders -->
+      <section>
+        <h2>Recent Orders</h2>
+        <table class="data-table" role="table" aria-describedby="recentOrders">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Product</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="recentOrdersTable">
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 1rem">
+                Loading orders…
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer id="site-footer"></footer>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+# Stripe CLI binary
+stripe.exe
+stripe
+
+# Redis binary
+Redis/
+
+# Python virtual environment
+venv/
+.venv/
+env/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

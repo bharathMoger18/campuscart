@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{ product.title }} - CampusCart</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 2rem;
+      }
+      .card {
+        max-width: 600px;
+        margin: auto;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 1rem;
+      }
+      img {
+        max-width: 100%;
+        border-radius: 8px;
+      }
+      .price {
+        font-size: 1.3rem;
+        color: #007bff;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      {% if product.image %}
+      <img src="{{ product.image.url }}" alt="{{ product.title }}" />
+      {% endif %}
+      <h2>{{ product.title }}</h2>
+      <p>{{ product.description }}</p>
+      <p class="price">Price: ₹{{ product.price }}</p>
+      <hr />
+      <a href="/notifications/">View Notifications</a>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,67 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CampusCart — Products</title>
+
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/theme.css" />
+  </head>
+  <body>
+    <!-- Navbar inserted by js/main.js -->
+    <header id="site-navbar"></header>
+
+    <main class="container">
+      <!-- Filters -->
+      <section class="filters">
+        <div class="filters-inner">
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="Search products, e.g. 'mouse'"
+            aria-label="Search products"
+          />
+          <select id="categorySelect" aria-label="Filter by category">
+            <option value="">All categories</option>
+            <!-- Option values will be preserved or you can populate via API later -->
+            <option value="Electronics">Electronics</option>
+            <option value="Books">Books</option>
+            <option value="Clothing">Clothing</option>
+            <option value="Accessories">Accessories</option>
+          </select>
+
+          <select id="sortSelect" aria-label="Sort products">
+            <option value="">Sort By</option>
+            <option value="price">Price: Low → High</option>
+            <option value="-price">Price: High → Low</option>
+            <option value="-average_rating">Top Rated</option>
+            <option value="-date_joined">Newest</option>
+          </select>
+
+          <button id="filterBtn" class="btn btn-primary">Apply</button>
+          <button id="clearFiltersBtn" class="btn btn-ghost">Clear</button>
+        </div>
+      </section>
+
+      <!-- Products grid -->
+      <section
+        id="productGrid"
+        class="product-grid"
+        aria-live="polite"
+      ></section>
+
+      <!-- Pagination (simple) -->
+      <nav id="pagination" class="pagination"></nav>
+    </main>
+
+    <footer id="site-footer"></footer>
+
+    <!-- Scripts (modules) -->
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/products.js"></script>
+  </body>
+</html>

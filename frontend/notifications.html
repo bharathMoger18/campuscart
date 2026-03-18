@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Notifications — CampusCart</title>
+
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+
+    <style>
+      main.container {
+        max-width: 900px;
+        margin: 1.5rem auto;
+      }
+      .notif-wrapper {
+        background: #fff;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(2, 6, 23, 0.03);
+      }
+      .notif-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: 0.8rem;
+      }
+      .notif-item {
+        padding: 0.8rem 1rem;
+        border-radius: 10px;
+        border: 1px solid #eef2f6;
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+      .notif-item.unread {
+        background: #f8fafc;
+        border-color: #e0f2fe;
+      }
+      .notif-body {
+        flex: 1;
+      }
+      .notif-meta {
+        font-size: 0.82rem;
+        color: #6b7280;
+        margin-top: 6px;
+      }
+      .notif-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .btn {
+        background: #2563eb;
+        color: #fff;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+      }
+      .btn-ghost {
+        background: #f3f4f6;
+        color: #111;
+        padding: 0.45rem 0.7rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+      }
+      .empty {
+        text-align: center;
+        color: #6b7280;
+        padding: 1.2rem;
+      }
+      .top-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <header id="site-navbar"></header>
+
+    <main class="container">
+      <div class="notif-wrapper">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h1>Notifications</h1>
+          <div class="top-actions">
+            <button id="markAllBtn" class="btn-ghost">Mark all read</button>
+            <button id="refreshBtn" class="btn">Refresh</button>
+          </div>
+        </div>
+
+        <div id="notifList" class="notif-list">
+          <div class="empty">Loading notifications…</div>
+        </div>
+
+        <div id="pagination" style="margin-top: 12px; text-align: center"></div>
+      </div>
+    </main>
+
+    <footer id="site-footer"></footer>
+
+    <script type="module">
+      import {
+        fetchNotifications,
+        markAsRead,
+        markAllRead,
+        startPolling,
+      } from './js/core/notifications.js';
+      import { showAlert, parseErrors } from './js/core/utils.js';
+
+      const listEl = document.getElementById('notifList');
+      const markAllBtn = document.getElementById('markAllBtn');
+      const refreshBtn = document.getElementById('refreshBtn');
+      const pagination = document.getElementById('pagination');
+
+      let currentPage = 1,
+        totalPages = 1;
+
+      async function load(page = 1) {
+        listEl.innerHTML = '<div class="empty">Loading notifications…</div>';
+        try {
+          const data = await fetchNotifications(page);
+          renderList(data);
+        } catch (err) {
+          console.error(err);
+          listEl.innerHTML =
+            '<div class="empty">Failed to load notifications.</div>';
+        }
+      }
+
+      function renderList(data) {
+        const results = data.results || [];
+        totalPages =
+          data.total_pages || Math.ceil((data.count || results.length) / 10);
+        currentPage =
+          parseInt(new URLSearchParams(location.search).get('page')) ||
+          currentPage;
+
+        if (!results.length) {
+          listEl.innerHTML = '<div class="empty">No notifications yet.</div>';
+          pagination.innerHTML = '';
+          return;
+        }
+
+        listEl.innerHTML = results
+          .map((n) => {
+            const isChat = n.url && n.url.includes('/chat/'); // 👈 detect chat notification
+            return `
+      <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
+        <div class="notif-body">
+          <div style="font-weight:700;">${escapeHtml(n.title)}</div>
+          <div style="margin-top:6px;">${escapeHtml(n.body)}</div>
+          <div class="notif-meta">
+            ${new Date(n.created_at).toLocaleString()} • ${escapeHtml(
+              n.type || ''
+            )}
+          </div>
+        </div>
+        <div class="notif-actions">
+          ${isChat ? '<button class="btn-ghost btn-open">Open</button>' : ''}
+          ${n.read ? '' : '<button class="btn btn-mark">Mark read</button>'}
+        </div>
+      </div>
+    `;
+          })
+          .join('');
+
+        // wire actions
+        listEl.querySelectorAll('.btn-open').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            const id = e.target.closest('.notif-item').dataset.id;
+            const n = results.find((x) => String(x.id) === String(id));
+            if (n && n.url) {
+              let targetUrl = n.url;
+              if (
+                targetUrl.includes('/chat/') &&
+                !targetUrl.includes('chat.html')
+              ) {
+                const convId = targetUrl
+                  .split('/chat/')[1]
+                  .replace('/', '')
+                  .trim();
+                targetUrl = `/chat.html?conversation=${convId}`;
+              }
+              // mark read then navigate
+              if (!n.read) {
+                markAsRead(n.id).catch(() => {});
+              }
+              window.location.href = targetUrl;
+            } else {
+              showAlert('No target for this notification', 'info');
+            }
+          });
+        });
+
+        listEl.querySelectorAll('.btn-mark').forEach((btn) => {
+          btn.addEventListener('click', async (e) => {
+            const id = e.target.closest('.notif-item').dataset.id;
+            try {
+              await markAsRead(id);
+              showAlert('Marked as read', 'success');
+              load(currentPage);
+            } catch (err) {
+              showAlert(
+                parseErrors(err.data) || 'Failed to mark read',
+                'error'
+              );
+            }
+          });
+        });
+
+        renderPagination();
+      }
+
+      function renderPagination() {
+        if (totalPages <= 1) {
+          pagination.innerHTML = '';
+          return;
+        }
+        let html = '';
+        for (let i = 1; i <= totalPages; i++) {
+          html += `<button data-page="${i}" class="${
+            i === currentPage ? 'active' : ''
+          }" style="margin:2px;padding:6px 10px;border-radius:6px;border:1px solid #ddd;background:${
+            i === currentPage ? '#2563eb' : '#fff'
+          };color:${i === currentPage ? '#fff' : '#111'}">${i}</button>`;
+        }
+        pagination.innerHTML = html;
+        pagination.querySelectorAll('button').forEach((b) => {
+          b.addEventListener('click', (ev) => {
+            const p = Number(ev.target.dataset.page);
+            currentPage = p;
+            load(p);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        });
+      }
+
+      markAllBtn.addEventListener('click', async () => {
+        if (!confirm('Mark all notifications as read?')) return;
+        try {
+          await markAllRead();
+          showAlert('All marked read', 'success');
+          load(1);
+        } catch (err) {
+          showAlert(parseErrors(err.data) || 'Failed to mark all', 'error');
+        }
+      });
+
+      refreshBtn.addEventListener('click', () => load(currentPage));
+
+      // initialize
+      load(1);
+      // also start a background poll to keep the global bell updated
+      startPolling();
+
+      function escapeHtml(s) {
+        if (!s) return '';
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+    </script>
+  </body>
+</html>

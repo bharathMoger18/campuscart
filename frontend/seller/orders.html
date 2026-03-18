@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seller Orders | CampusCart</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/components.css" />
+    <script type="module" src="../js/main.js" defer></script>
+    <script type="module" src="./js/orders.js" defer></script>
+
+    <style>
+      .page-title {
+        font-size: 2rem;
+        margin: 1rem 0;
+      }
+      .controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+      .controls .search {
+        flex: 1;
+        min-width: 200px;
+      }
+      .controls .filters {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 6px 18px rgba(2, 6, 23, 0.04);
+      }
+      .data-table thead {
+        background: #f8fafc;
+      }
+      .data-table th,
+      .data-table td {
+        padding: 0.9rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.95rem;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.78rem;
+      }
+      .pagination {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .btn-small {
+        padding: 6px 10px;
+        font-size: 0.9rem;
+        border-radius: 8px;
+      }
+      .actions .btn {
+        margin-right: 0.5rem;
+      }
+      @media (max-width: 720px) {
+        .controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header id="site-navbar"></header>
+
+    <main class="container">
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        "
+      >
+        <h1 class="page-title">Seller Orders</h1>
+        <a class="btn btn-ghost" href="/seller/dashboard.html"
+          >Back to Dashboard</a
+        >
+      </div>
+
+      <div class="controls">
+        <input
+          id="searchInput"
+          class="search input"
+          placeholder="Search by order ID / product / buyer name"
+        />
+        <div class="filters">
+          <label for="statusFilter">Status</label>
+          <select id="statusFilter" class="select">
+            <option value="">All</option>
+            <option value="PENDING">Pending</option>
+            <option value="PAID">Paid</option>
+            <option value="SHIPPED">Shipped</option>
+            <option value="DELIVERED">Delivered</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="REFUND_REQUESTED">Refund Requested</option>
+            <option value="REFUNDED">Refunded</option>
+          </select>
+        </div>
+      </div>
+
+      <table class="data-table" id="ordersTable">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Buyer</th>
+            <th>Product</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTableBody">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 1rem">
+              Loading orders…
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div
+        class="pagination"
+        id="pagination"
+        role="navigation"
+        aria-label="Pagination"
+      ></div>
+    </main>
+
+    <footer id="site-footer"></footer>
+  </body>
+</html>

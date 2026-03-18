@@ -1,0 +1,32 @@
+/* css/auth.css - auth page layout */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+}
+.auth-wrapper {
+  width: 100%;
+  max-width: 420px;
+}
+.auth-hero {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.auth-hero h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.4rem;
+}
+.auth-hero p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.primary-cta {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+small.muted {
+  color: var(--muted);
+}

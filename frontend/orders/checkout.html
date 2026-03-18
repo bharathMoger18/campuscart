@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Checkout — CampusCart</title>
+
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/components.css" />
+    <link rel="stylesheet" href="../css/theme.css" />
+    <style>
+      .checkout-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      .payment-card {
+        display: none;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: var(--surface);
+      }
+      .payment-card.visible {
+        display: flex;
+      }
+      @media (min-width: 768px) {
+        .checkout-container {
+          flex-direction: row;
+        }
+        .checkout-form {
+          flex: 1;
+        }
+        #checkoutSummary {
+          flex: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header id="site-navbar"></header>
+
+    <main class="container checkout-container">
+      <section id="checkoutSummary" class="cart-container loading">
+        Loading order summary...
+      </section>
+
+      <section class="checkout-form">
+        <h2>Shipping Details</h2>
+        <div class="form-group">
+          <label for="address">Address</label>
+          <textarea id="address" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="payment">Payment Method</label>
+          <select id="payment">
+            <option value="cod">Cash on Delivery</option>
+            <option value="card">Online Payment</option>
+          </select>
+        </div>
+
+        <div id="cardSection" class="payment-card">
+          <p>
+            💳 You’ll be redirected to a secure payment page to complete your
+            order.
+          </p>
+        </div>
+
+        <button id="placeOrderBtn" class="btn btn-primary full-width">
+          Place Order
+        </button>
+      </section>
+    </main>
+
+    <footer id="site-footer"></footer>
+
+    <script type="module" src="../js/main.js"></script>
+    <script type="module" src="../js/checkout.js"></script>
+  </body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Detail | CampusCart</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/components.css" />
+    <script type="module" src="../js/main.js" defer></script>
+    <script type="module" src="./js/order_detail.js" defer></script>
+
+    <style>
+      .page-title {
+        font-size: 2rem;
+        margin: 1rem 0;
+      }
+      .card {
+        background: #fff;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(2, 6, 23, 0.04);
+      }
+      .order-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .order-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .order-item {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        border-radius: 8px;
+        padding: 0.6rem;
+        background: #fafafa;
+        border: 1px solid rgba(2, 6, 23, 0.03);
+      }
+      .order-item img {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+      .meta {
+        color: #6b7280;
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+      .actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.78rem;
+      }
+      .status-pending {
+        background: #fff7ed;
+        color: #92400e;
+      }
+      .status-paid {
+        background: #ecfeff;
+        color: #036666;
+      }
+      .status-shipped {
+        background: #eef2ff;
+        color: #3730a3;
+      }
+      .status-delivered {
+        background: #ecfdf5;
+        color: #065f46;
+      }
+      .status-cancelled {
+        background: #fff1f2;
+        color: #9f1239;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header id="site-navbar"></header>
+
+    <main class="container">
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        "
+      >
+        <h1 class="page-title">Order Detail</h1>
+        <div>
+          <a class="btn btn-ghost" href="/./orders.html">Back to Orders</a>
+        </div>
+      </div>
+
+      <div id="orderDetailContainer" class="card">
+        <!-- content inserted by JS -->
+        <div style="text-align: center; padding: 1rem; color: #6b7280">
+          Loading order…
+        </div>
+      </div>
+    </main>
+
+    <footer id="site-footer"></footer>
+  </body>
+</html>

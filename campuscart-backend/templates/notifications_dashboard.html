@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Notifications Dashboard</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #f8f9fa;
+        padding: 2rem;
+      }
+      h2 {
+        margin-bottom: 1rem;
+      }
+      .notif {
+        background: #fff;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .notif small {
+        color: #666;
+        display: block;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>🔔 Live Notifications</h2>
+    <div id="list"></div>
+
+    <script>
+      const token = prompt('Enter your JWT token:');
+      const ws = new WebSocket(
+        `ws://127.0.0.1:8000/ws/notifications/?token=${token}`
+      );
+      const list = document.getElementById('list');
+
+      ws.onopen = () => {
+        console.log('✅ Connected to WebSocket');
+        ws.send(JSON.stringify({ type: 'fetch' }));
+      };
+
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'notifications_list') {
+          msg.notifications.forEach(addNotification);
+        } else if (msg.type === 'notification') {
+          addNotification(msg.data);
+        }
+      };
+
+      function addNotification(n) {
+        const div = document.createElement('div');
+        div.className = 'notif';
+        div.innerHTML = `<strong>${n.title}</strong><br>${
+          n.body
+        }<small>${new Date(n.created_at).toLocaleString()}</small>`;
+        list.prepend(div);
+      }
+    </script>
+  </body>
+</html>

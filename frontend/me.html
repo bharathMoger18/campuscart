@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>My Profile — CampusCart</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body>
+    <main class="container">
+      <div style="max-width: 720px; margin: 3rem auto">
+        <h1>My Profile</h1>
+        <div id="profileCard" class="auth-card">
+          <p>Loading profile...</p>
+        </div>
+      </div>
+    </main>
+
+    <script type="module">
+      import { getProfile, logout } from './js/core/auth.js';
+      import { showAlert, redirectTo } from './js/core/utils.js';
+
+      async function run() {
+        try {
+          const profile = await getProfile();
+          const el = document.getElementById('profileCard');
+          el.innerHTML = `
+          <p><strong>Name:</strong> ${profile.name}</p>
+          <p><strong>Email:</strong> ${profile.email}</p>
+          <p><strong>Campus:</strong> ${profile.campus || '—'}</p>
+          <p><strong>Phone:</strong> ${profile.phone || '—'}</p>
+          <p><strong>Joined:</strong> ${new Date(
+            profile.date_joined
+          ).toLocaleString()}</p>
+          <div style="margin-top:1rem;">
+            <button id="logoutBtn" class="btn btn-ghost">Logout</button>
+          </div>
+        `;
+          document.getElementById('logoutBtn').addEventListener('click', () => {
+            logout();
+            redirectTo('login.html');
+          });
+        } catch (err) {
+          showAlert('Session expired. Please log in again.', 'error');
+          redirectTo('login.html', 800);
+        }
+      }
+      run();
+    </script>
+  </body>
+</html>

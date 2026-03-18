@@ -4,31 +4,26 @@ from reviews.serializers import ReviewSerializer
 
 class ProductSerializer(serializers.ModelSerializer):
     owner_email = serializers.EmailField(source="owner.email", read_only=True)
-    owner_id = serializers.IntegerField(source="owner.id", read_only=True)  # ✅ Add this line
+    owner_id = serializers.IntegerField(source="owner.id", read_only=True)
     average_rating = serializers.FloatField(read_only=True)
     total_reviews = serializers.IntegerField(read_only=True)
     rating_breakdown = serializers.SerializerMethodField()
     reviews = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
-            "id",
-            "owner_id",
-            "owner_email",
-            "title",
-            "description",
-            "category",
-            "price",
-            "image",
-            "is_available",
-            "average_rating",
-            "total_reviews",
-            "rating_breakdown",
-            "reviews",
-            "created_at",
-            "updated_at",
+            "id", "owner_id", "owner_email", "title", "description",
+            "category", "price", "image", "is_available", "average_rating",
+            "total_reviews", "rating_breakdown", "reviews",
+            "created_at", "updated_at",
         ]
+
+    def get_image(self, obj):
+        if obj.image:
+            return '/media/' + str(obj.image)
+        return None
 
     def get_rating_breakdown(self, obj):
         return obj.rating_breakdown()

@@ -1,4 +1,5 @@
 # payments/views.py
+import os
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -28,7 +29,7 @@ def create_checkout_session(request):
         except Order.DoesNotExist:
             return JsonResponse({"error": "Order not found"}, status=404)
 
-        YOUR_DOMAIN = "http://localhost:5500"  # frontend URL
+        YOUR_DOMAIN = os.getenv("FRONTEND_URL","http://localhost")  # frontend URL
 
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=["card"],

@@ -38,7 +38,7 @@ async function loadSummary() {
             <div class="cart-product">
               <img src="${
                 i.product.image
-                  ? `http://localhost:8000/media/${i.product.image.replace(
+                  ? i.product.image
                       /^\/?media\//,
                       ''
                     )}`

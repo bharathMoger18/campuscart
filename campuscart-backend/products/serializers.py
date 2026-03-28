@@ -31,3 +31,4 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_reviews(self, obj):
         reviews = obj.reviews.select_related("user").all()
         return ReviewSerializer(reviews, many=True).data
+    

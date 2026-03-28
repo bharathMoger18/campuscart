@@ -70,12 +70,8 @@ function renderCart(cart) {
     const row = document.createElement('div');
     row.className = 'cart-row';
     const imageUrl = it.product.image
-      ? `http://localhost:8000/media/${it.product.image.replace(
-          /^\/?media\//,
-          ''
-        )}`
-      : '/assets/images/noimg.png';
-
+    	? it.product.image
+    	: '/assets/images/noimg.png';
     const safeTitle = escapeHtml(it.product.title);
 
     row.innerHTML = `

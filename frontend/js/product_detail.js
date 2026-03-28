@@ -35,9 +35,7 @@ async function run() {
 
 function renderProduct(p) {
   const imageSrc = p.image
-    ? p.image.startsWith('http')
-      ? p.image
-      : `http://127.0.0.1:8000${p.image}`
+    ? p.image
     : '/assets/images/placeholder.png';
 
   container.innerHTML = `

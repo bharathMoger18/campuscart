@@ -1,0 +1,219 @@
+# ============================================================
+# docker-compose.yml — CampusCart
+# Orchestrates 4 containers: db, redis, web (Django), nginx
+#
+# How to use:
+#   First time:  docker compose up --build
+#   Normal:      docker compose up -d
+#   Stop:        docker compose down
+#   Logs:        docker compose logs -f web
+#   Shell:       docker compose exec web bash
+# ============================================================
+
+services:
+
+  # ── SERVICE 1: PostgreSQL Database ─────────────────────────
+  db:
+    # Official PostgreSQL 15 image from Docker Hub
+    # We pin to major version 15 for stability
+    # Never use 'latest' in production — unpredictable upgrades
+    image: postgres:15-alpine
+
+    # Restart policy: always restart unless manually stopped
+    # Options: no | always | on-failure | unless-stopped
+    # 'unless-stopped' = survive reboots, but respect manual stops
+    restart: unless-stopped
+
+    # Environment variables configure PostgreSQL on first start
+    # These create the database, user, and set the password
+    # In production (AWS), these come from SSM Parameter Store
+    environment:
+      POSTGRES_DB: ${DB_NAME:-campuscart_db}
+      POSTGRES_USER: ${DB_USER:-campuscart_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    # Named volume for PostgreSQL data persistence
+    # /var/lib/postgresql/data is where PostgreSQL stores all data
+    # Without this volume: all your data dies when container restarts
+    # With this volume: data survives container stop/start/rebuild
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    # Health check: pg_isready tests if PostgreSQL is accepting connections
+    # Docker uses this to know when db is truly ready (not just started)
+    # web service has: depends_on: db: condition: service_healthy
+    # This prevents Django from starting before DB is ready → no crashes
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-campuscart_user} -d ${DB_NAME:-campuscart_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    # Connect to the shared Docker bridge network
+    networks:
+      - campuscart_network
+
+  # ── SERVICE 2: Redis ─────────────────────────────────────────
+  redis:
+    # Official Redis 7 Alpine image — tiny and fast
+    image: redis:7-alpine
+
+    restart: unless-stopped
+
+    # Redis health check: redis-cli ping returns "PONG" if healthy
+    # Django Channels uses Redis as message broker for WebSockets
+    # If Redis isn't ready, WebSocket connections fail
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - campuscart_network
+
+  # ── SERVICE 3: Django/Daphne Web Application ─────────────────
+  web:
+    # Build from Dockerfile in campuscart-backend/ directory
+    # 'context' = where the build context is (what gets sent to Docker daemon)
+    # 'dockerfile' = which Dockerfile to use
+    build:
+      context: ./campuscart-backend
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    # depends_on with service_healthy = wait for db AND redis to pass
+    # health checks before starting Django.
+    # This is the correct way — depends_on alone only waits for
+    # container START, not for the service inside to be READY.
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    # Environment variables passed to Django container at runtime
+    # These OVERRIDE the .env file values (which we don't copy into image)
+    # ${VARIABLE:-default} syntax: use env var, fallback to default
+    #
+    # In development: create a .env file at project root with these values
+    # In production (AWS): values come from SSM Parameter Store via IAM role
+    environment:
+      # Django core
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+
+      # Database — DB_HOST must be 'db' (service name), NOT localhost!
+      # 'localhost' inside web container = the web container itself
+      # 'db' = Docker DNS resolves to the PostgreSQL container's IP
+      DB_NAME: ${DB_NAME:-campuscart_db}
+      DB_USER: ${DB_USER:-campuscart_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+
+      # Redis — must be 'redis' (service name), NOT 127.0.0.1!
+      # Same reasoning as DB_HOST above
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Email
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+
+      # Stripe
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+
+      # Push Notifications (VAPID)
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+      VAPID_EMAIL: ${VAPID_EMAIL}
+
+    # Volumes for the web container:
+    # 1. media_volume: persistent storage for uploaded product images
+    #    Django writes to /app/media/ — survives container rebuilds
+    # 2. static_volume: Django's collectstatic output
+    #    Nginx reads from this same volume to serve /static/ requests
+    #    Both containers mount the same volume — shared filesystem
+    volumes:
+      - media_volume:/app/media
+      - static_volume:/app/staticfiles
+
+    # Health check: curl the Django API health endpoint
+    # If Daphne is serving requests, this returns 200
+    # We check /api/v1/ — a guaranteed existing endpoint
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/products/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    networks:
+      - campuscart_network
+
+  # ── SERVICE 4: Nginx Reverse Proxy ───────────────────────────
+  nginx:
+    # Build from nginx/Dockerfile
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    # Port mapping: HOST:CONTAINER
+    # Maps host port 80 to nginx container port 80
+    # When user visits http://localhost → hits host port 80
+    # → Docker routes to nginx container port 80
+    # This is the ONLY port exposed to the outside world
+    # db, redis, web are NOT exposed — only accessible within Docker network
+    ports:
+      - "80:80"
+
+    depends_on:
+      web:
+        condition: service_healthy
+
+    volumes:
+      # Frontend HTML/CSS/JS — bind mount (you can edit files on host)
+      # :ro = read-only — Nginx only serves, never writes
+      - ./frontend:/usr/share/nginx/html:ro
+
+      # Static files from Django — shared named volume with web container
+      # web writes to static_volume, nginx reads from it
+      - static_volume:/app/staticfiles:ro
+
+      # Media files — shared named volume with web container
+      # web writes uploaded images, nginx serves them directly
+      - media_volume:/app/media:ro
+
+    networks:
+      - campuscart_network
+
+# ── Named Volumes ─────────────────────────────────────────────
+# These are managed by Docker — stored at /var/lib/docker/volumes/
+# They persist across: container restarts, rebuilds, compose down
+# Only deleted by: docker compose down -v  or  docker volume rm
+volumes:
+  postgres_data:
+    # PostgreSQL data — ALL your database content
+    # NEVER delete this unless you want to lose all data
+  media_volume:
+    # User uploaded product images
+  static_volume:
+    # Django collectstatic output (admin CSS, DRF UI, etc.)
+
+# ── Networks ──────────────────────────────────────────────────
+# One bridge network for all 4 containers
+# All services can reach each other by service name
+# External traffic enters ONLY through nginx:80
+# db and redis are completely isolated from the internet
+networks:
+  campuscart_network:
+    driver: bridge

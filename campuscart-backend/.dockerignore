@@ -1,0 +1,50 @@
+# ============================================================
+# .dockerignore — CampusCart Django Backend
+# Tells Docker: "Don't send these files to the build context"
+# Same syntax as .gitignore
+# ============================================================
+
+# Python runtime artifacts — OS-specific, useless in container
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+
+# Virtual environment — we pip install fresh inside Docker
+# venv can be 500MB+, excluding saves massive build time
+venv/
+.venv/
+
+# CRITICAL SECURITY — contains SECRET_KEY, DB passwords, Stripe keys
+# Secrets enter via docker-compose 'environment:' section, NOT the image
+.env
+.env.*
+!.env.example
+
+# Local SQLite DB — we use PostgreSQL container in Docker
+*.sqlite3
+*.db
+
+# Media files — will be a Docker named volume (persistent storage)
+media/
+
+# Static files — collectstatic runs INSIDE Dockerfile as build step
+staticfiles/
+
+# Logs
+*.log
+logs/
+
+# Git history — 30MB+ with zero use inside a container
+.git/
+.gitignore
+
+# IDE and OS garbage
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Docker files themselves — no need inside the image
+Dockerfile
+.dockerignore

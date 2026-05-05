@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Interview Q&A — CampusCart DevOps</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10;
+    --bg2: #0c1018;
+    --bg3: #111620;
+    --panel: #0f1520;
+    --panel2: #131a28;
+    --border: #1a2235;
+    --border2: #1f2d45;
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --accent3: #34d399;
+    --accent4: #fbbf24;
+    --accent5: #f87171;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --text3: #475569;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Fraunces', serif;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  /* ── PROGRESS ── */
+  .progress-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--border);
+    z-index: 999;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+    width: 0%;
+    transition: width 0.1s;
+  }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 300px;
+    min-width: 300px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .sidebar-top {
+    padding: 32px 28px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .sidebar-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .sidebar-sub {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  /* SEARCH */
+  .search-wrap {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-size: 12px;
+    font-family: var(--mono);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+
+  /* NAV */
+  .sidebar-nav { padding: 12px 0; flex: 1; }
+
+  .nav-section-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 10px 24px 4px;
+  }
+
+  .nav-q {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 24px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+
+  .nav-q:hover {
+    background: rgba(56,189,248,0.04);
+    border-left-color: rgba(56,189,248,0.4);
+  }
+
+  .nav-q.active {
+    background: rgba(56,189,248,0.07);
+    border-left-color: var(--accent);
+  }
+
+  .nav-q .q-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    min-width: 22px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .nav-q.active .q-num { color: var(--accent); }
+
+  .nav-q .q-text {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.4;
+  }
+
+  .nav-q.active .q-text { color: var(--text); }
+
+  /* SIDEBAR FOOTER */
+  .sidebar-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .score-bar-wrap {
+    margin-bottom: 8px;
+  }
+
+  .score-bar-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .score-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent3), var(--accent));
+    transition: width 0.5s ease;
+  }
+
+  .answered-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-align: center;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    margin-left: 300px;
+    flex: 1;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    position: sticky;
+    top: 0;
+    background: rgba(8,12,16,0.94);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 50;
+  }
+
+  .topbar-left {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .topbar-left span { color: var(--accent); }
+
+  .topbar-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  .chip.blue { color: var(--accent); border-color: rgba(56,189,248,0.3); background: rgba(56,189,248,0.06); }
+  .chip.green { color: var(--accent3); border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.06); }
+  .chip.yellow { color: var(--accent4); border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.06); }
+
+  /* HERO */
+  .hero {
+    padding: 64px 56px 56px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -150px; right: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(56,189,248,0.04) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -100px; left: 300px;
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(129,140,248,0.04) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .hero-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hero-label::after {
+    content: '';
+    flex: 1;
+    max-width: 60px;
+    height: 1px;
+    background: var(--accent);
+    opacity: 0.4;
+  }
+
+  .hero h1 {
+    font-family: var(--serif);
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1.05;
+    margin-bottom: 18px;
+    color: var(--text);
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero p {
+    font-size: 16px;
+    color: var(--text2);
+    max-width: 580px;
+    font-weight: 300;
+    line-height: 1.75;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .meta-item { display: flex; flex-direction: column; gap: 3px; }
+  .meta-num {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .meta-label {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: var(--mono);
+  }
+
+  /* ── Q&A CONTENT ── */
+  .qa-content {
+    padding: 0 56px 80px;
+  }
+
+  /* CATEGORY HEADER */
+  .category-header {
+    padding: 48px 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .category-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .category-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 4px 12px;
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+  }
+
+  /* QA CARD */
+  .qa-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+    scroll-margin-top: 80px;
+  }
+
+  .qa-card:hover { border-color: var(--border2); }
+  .qa-card.open { border-color: rgba(56,189,248,0.3); }
+
+  .qa-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 22px 28px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .q-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    background: rgba(56,189,248,0.1);
+    border: 1px solid rgba(56,189,248,0.2);
+    border-radius: 6px;
+    padding: 3px 10px;
+    white-space: nowrap;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .q-text {
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .q-toggle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--text3);
+    flex-shrink: 0;
+    transition: all 0.2s;
+    margin-top: 2px;
+  }
+
+  .qa-card.open .q-toggle {
+    background: rgba(56,189,248,0.1);
+    border-color: rgba(56,189,248,0.3);
+    color: var(--accent);
+    transform: rotate(45deg);
+  }
+
+  /* QA BODY */
+  .qa-body {
+    display: none;
+    padding: 0 28px 28px;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+    margin-top: 0;
+  }
+
+  .qa-card.open .qa-body { display: block; }
+
+  /* ANSWER SECTIONS */
+  .answer-intro {
+    font-size: 15px;
+    color: var(--text2);
+    line-height: 1.8;
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: rgba(56,189,248,0.04);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .answer-intro strong { color: var(--text); }
+
+  .answer-section {
+    margin: 16px 0;
+  }
+
+  .answer-section h4 {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .answer-section h4::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .answer-section p {
+    font-size: 14.5px;
+    color: var(--text2);
+    line-height: 1.8;
+  }
+
+  .answer-section p + p { margin-top: 10px; }
+  .answer-section strong { color: var(--text); font-weight: 500; }
+
+  /* WHAT TO SAY */
+  .say-block {
+    background: rgba(52,211,153,0.05);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+    position: relative;
+  }
+
+  .say-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .say-label::before { content: '💬'; }
+
+  .say-block p {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.8;
+    font-style: italic;
+  }
+
+  .say-block p strong {
+    color: var(--text);
+    font-style: normal;
+  }
+
+  /* WARN BLOCK */
+  .warn-block {
+    background: rgba(251,191,36,0.05);
+    border: 1px solid rgba(251,191,36,0.2);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    font-size: 13.5px;
+    color: var(--text2);
+    line-height: 1.7;
+    display: flex;
+    gap: 10px;
+  }
+
+  .warn-block .icon { flex-shrink: 0; font-size: 15px; }
+
+  /* KEY POINT */
+  .key-point {
+    background: rgba(129,140,248,0.05);
+    border: 1px solid rgba(129,140,248,0.2);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    font-size: 13.5px;
+    color: var(--text2);
+    line-height: 1.7;
+    display: flex;
+    gap: 10px;
+  }
+
+  .key-point .icon { flex-shrink: 0; font-size: 15px; }
+
+  /* CODE */
+  .code-snip {
+    background: #060910;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: #cbd5e1;
+    line-height: 1.7;
+    margin: 12px 0;
+    overflow-x: auto;
+  }
+
+  .code-snip .cm { color: #3d5066; }
+  .code-snip .kw { color: var(--accent); }
+  .code-snip .st { color: var(--accent3); }
+  .code-snip .nm { color: var(--accent4); }
+
+  /* TABLE */
+  .ans-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 14px 0;
+    font-family: var(--mono);
+  }
+
+  .ans-table th {
+    background: rgba(56,189,248,0.06);
+    border: 1px solid var(--border);
+    padding: 9px 14px;
+    text-align: left;
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .ans-table td {
+    border: 1px solid var(--border);
+    padding: 9px 14px;
+    color: var(--text2);
+    vertical-align: top;
+    font-family: var(--sans);
+    font-size: 13px;
+  }
+
+  .ans-table td:first-child {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+
+  /* LIST */
+  .ans-list {
+    list-style: none;
+    margin: 10px 0;
+  }
+
+  .ans-list li {
+    display: flex;
+    gap: 10px;
+    padding: 5px 0;
+    font-size: 14px;
+    color: var(--text2);
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+    align-items: flex-start;
+  }
+
+  .ans-list li::before {
+    content: '→';
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+
+  .ans-list li strong { color: var(--text); font-weight: 500; }
+
+  /* TAGS */
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+
+  .tag.b { color: var(--accent); border-color: rgba(56,189,248,0.3); background: rgba(56,189,248,0.05); }
+  .tag.g { color: var(--accent3); border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.05); }
+  .tag.y { color: var(--accent4); border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.05); }
+  .tag.r { color: var(--accent5); border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.05); }
+  .tag.p { color: var(--accent2); border-color: rgba(129,140,248,0.3); background: rgba(129,140,248,0.05); }
+
+  /* DIFFICULTY */
+  .difficulty {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .diff-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+
+  .diff-easy .diff-dot { background: var(--accent3); }
+  .diff-med .diff-dot { background: var(--accent4); }
+  .diff-hard .diff-dot { background: var(--accent5); }
+  .diff-easy { color: var(--accent3); }
+  .diff-med { color: var(--accent4); }
+  .diff-hard { color: var(--accent5); }
+
+  /* COMPARISON GRID */
+  .cmp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 14px 0;
+  }
+
+  .cmp-card {
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13.5px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+
+  .cmp-card h5 {
+    font-family: var(--mono);
+    font-size: 11px;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .cmp-card.a { background: rgba(56,189,248,0.05); border: 1px solid rgba(56,189,248,0.2); }
+  .cmp-card.a h5 { color: var(--accent); }
+  .cmp-card.b-card { background: rgba(129,140,248,0.05); border: 1px solid rgba(129,140,248,0.2); }
+  .cmp-card.b-card h5 { color: var(--accent2); }
+  .cmp-card.good { background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.2); }
+  .cmp-card.good h5 { color: var(--accent3); }
+  .cmp-card.bad { background: rgba(248,113,113,0.05); border: 1px solid rgba(248,113,113,0.2); }
+  .cmp-card.bad h5 { color: var(--accent5); }
+
+  /* SUBNET ROW */
+  .subnet-visual {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 14px 0;
+  }
+
+  .sv-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  .sv-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    min-width: 24px;
+  }
+
+  .sv-ip { font-family: var(--mono); font-size: 12px; color: var(--accent); min-width: 110px; }
+  .sv-name { color: var(--text); font-weight: 500; flex: 1; }
+  .sv-tag { font-family: var(--mono); font-size: 10px; }
+
+  /* ANIMATE */
+  .qa-card {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.2s;
+  }
+
+  .qa-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* COMPLETE BANNER */
+  .complete-banner {
+    background: linear-gradient(135deg, rgba(52,211,153,0.08) 0%, rgba(56,189,248,0.08) 100%);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 14px;
+    padding: 36px 40px;
+    margin: 40px 0;
+    text-align: center;
+  }
+
+  .complete-banner h3 {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .complete-banner p {
+    color: var(--text2);
+    font-size: 15px;
+    max-width: 500px;
+    margin: 0 auto 20px;
+  }
+
+  /* HIDDEN */
+  .qa-card.hidden-search { display: none; }
+</style>
+</head>
+<body>
+
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<div class="layout">
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-top">
+    <div class="sidebar-eyebrow">Phase 2 · Interview Prep</div>
+    <div class="sidebar-title">AWS Interview<br>Q&amp;A</div>
+    <div class="sidebar-sub">CampusCart — 20 questions</div>
+  </div>
+
+  <div class="search-wrap">
+    <input class="search-input" type="text" id="searchInput" placeholder="Search questions..." />
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav">
+    <div class="nav-section-label">VPC &amp; Networking</div>
+    <a class="nav-q" href="#q1"><span class="q-num">Q1</span><span class="q-text">What is a VPC and why custom?</span></a>
+    <a class="nav-q" href="#q2"><span class="q-num">Q2</span><span class="q-text">What is a CIDR block? Explain 10.0.0.0/16</span></a>
+    <a class="nav-q" href="#q3"><span class="q-num">Q3</span><span class="q-text">Public vs private subnet difference?</span></a>
+    <a class="nav-q" href="#q4"><span class="q-num">Q4</span><span class="q-text">Usable IPs in a /24 subnet on AWS?</span></a>
+    <a class="nav-q" href="#q5"><span class="q-num">Q5</span><span class="q-text">What is an Internet Gateway?</span></a>
+    <a class="nav-q" href="#q6"><span class="q-num">Q6</span><span class="q-text">What is a route table? What routes?</span></a>
+
+    <div class="nav-section-label">High Availability</div>
+    <a class="nav-q" href="#q7"><span class="q-num">Q7</span><span class="q-text">Why 2 availability zones?</span></a>
+    <a class="nav-q" href="#q8"><span class="q-num">Q8</span><span class="q-text">What is high availability?</span></a>
+
+    <div class="nav-section-label">EC2 &amp; Compute</div>
+    <a class="nav-q" href="#q9"><span class="q-num">Q9</span><span class="q-text">What is Elastic IP and why needed?</span></a>
+    <a class="nav-q" href="#q10"><span class="q-num">Q10</span><span class="q-text">Stop vs terminate an EC2?</span></a>
+    <a class="nav-q" href="#q11"><span class="q-num">Q11</span><span class="q-text">What is an AMI?</span></a>
+    <a class="nav-q" href="#q12"><span class="q-num">Q12</span><span class="q-text">Why Ubuntu 22.04 LTS specifically?</span></a>
+
+    <div class="nav-section-label">Security</div>
+    <a class="nav-q" href="#q13"><span class="q-num">Q13</span><span class="q-text">How does SSH work at network level?</span></a>
+    <a class="nav-q" href="#q14"><span class="q-num">Q14</span><span class="q-text">What is a .pem file and chmod 400?</span></a>
+    <a class="nav-q" href="#q15"><span class="q-num">Q15</span><span class="q-text">IGW vs NAT Gateway difference?</span></a>
+    <a class="nav-q" href="#q16"><span class="q-num">Q16</span><span class="q-text">Security Group vs Network ACL?</span></a>
+
+    <div class="nav-section-label">Architecture Decisions</div>
+    <a class="nav-q" href="#q17"><span class="q-num">Q17</span><span class="q-text">If AZ ap-south-1a goes down?</span></a>
+    <a class="nav-q" href="#q18"><span class="q-num">Q18</span><span class="q-text">Why DB not in private subnet?</span></a>
+    <a class="nav-q" href="#q19"><span class="q-num">Q19</span><span class="q-text">AWS shared responsibility model?</span></a>
+    <a class="nav-q" href="#q20"><span class="q-num">Q20</span><span class="q-text">Explain architecture to non-technical?</span></a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="score-bar-wrap">
+      <div class="score-bar-label">
+        <span>Questions opened</span>
+        <span id="openedCount">0 / 20</span>
+      </div>
+      <div class="score-bar">
+        <div class="score-fill" id="scoreFill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <div class="topbar">
+    <div class="topbar-left">campuscart / <span>aws-interview-qa.html</span></div>
+    <div class="topbar-right">
+      <span class="chip blue">20 Questions</span>
+      <span class="chip green">CampusCart Context</span>
+      <span class="chip yellow">Soldier 2 · Phase 2</span>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-label">Interview Preparation</div>
+    <h1>Answer Every<br><em>AWS Question</em><br>With Confidence</h1>
+    <p>All 20 questions answered from CampusCart's exact architecture. Not generic AWS theory — your VPC, your subnets, your decisions. The kind of answers that make interviewers lean forward.</p>
+    <div class="hero-meta">
+      <div class="meta-item"><div class="meta-num">20</div><div class="meta-label">Questions</div></div>
+      <div class="meta-item"><div class="meta-num">6</div><div class="meta-label">Resume Variants</div></div>
+      <div class="meta-item"><div class="meta-num">1</div><div class="meta-label">Real Project</div></div>
+    </div>
+  </div>
+
+  <!-- Q&A CONTENT -->
+  <div class="qa-content">
+
+    <!-- ═══ CATEGORY: VPC & NETWORKING ═══ -->
+    <div class="category-header">
+      <div class="category-line"></div>
+      <div class="category-tag">VPC &amp; Networking</div>
+      <div class="category-line"></div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="qa-card" id="q1" data-q="What is a VPC and why did you create one instead of using the default VPC?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q01</div>
+        <div class="q-text">What is a VPC and why did you create one instead of using the default VPC?</div>
+        <div class="difficulty diff-easy"><div class="diff-dot"></div>Easy</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          A <strong>VPC (Virtual Private Cloud)</strong> is a logically isolated network that you own inside AWS. Think of it as renting a private floor in AWS's building — you control who enters, how traffic flows, and how resources are organized. Everything you deploy in AWS lives inside a VPC.
+        </div>
+
+        <div class="answer-section">
+          <h4>Why Not the Default VPC?</h4>
+          <div class="cmp-grid">
+            <div class="cmp-card bad">
+              <h5>❌ Default VPC — Why We Avoided It</h5>
+              AWS creates one automatically in every region. CIDR: 172.31.0.0/16. All subnets are public by default. No private subnet separation. Zero control over IP architecture. Not production-appropriate.
+            </div>
+            <div class="cmp-card good">
+              <h5>✅ Custom VPC — What CampusCart Uses</h5>
+              CIDR: 10.0.0.0/16. We designed every subnet. Public and private separation. Route tables we control. Matches the architecture a real production system would have.
+            </div>
+          </div>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"For CampusCart, I created a custom VPC with CIDR <strong>10.0.0.0/16</strong> in ap-south-1 (Mumbai). The default VPC had all subnets public with no network isolation — not production-appropriate. My custom VPC gave me full control: I designed 4 subnets across 2 AZs, created separate route tables for public and private subnets, and attached an internet gateway only for the public-facing EC2 instance. This matches the architecture patterns used in real production environments."</p>
+        </div>
+
+        <div class="key-point">
+          <span class="icon">💡</span>
+          <div><strong>Key thing interviewers want to hear:</strong> You understand WHY the default VPC is unsuitable, not just that you created a custom one. The answer is: no private subnets, no network isolation, no control over IP architecture.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="qa-card" id="q2" data-q="What is a CIDR block? Explain 10.0.0.0/16">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q02</div>
+        <div class="q-text">What is a CIDR block? Explain 10.0.0.0/16.</div>
+        <div class="difficulty diff-med"><div class="diff-dot"></div>Medium</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          CIDR stands for <strong>Classless Inter-Domain Routing</strong>. A CIDR block is a notation that describes a range of IP addresses. The format is: <strong>IP_ADDRESS / PREFIX_LENGTH</strong>. The slash number tells you how many bits are fixed (network part) — the remaining bits are free (host range).
+        </div>
+
+        <div class="answer-section">
+          <h4>Breaking Down 10.0.0.0/16</h4>
+          <p>An IPv4 address is 32 bits. Written as 4 octets (groups of 8 bits) in decimal, separated by dots.</p>
+          <div class="code-snip">
+10.0.0.0  in binary:
+<span class="kw">00001010.00000000</span>.<span class="st">00000000.00000000</span>
+└─────────────────┘ └─────────────────┘
+  /16 = FIXED bits     FREE bits (host range)
+  (the "network" part)  (your IP addresses)
+
+Free bits = 32 - 16 = <span class="nm">16 bits</span>
+Total IPs = 2^16     = <span class="nm">65,536 IP addresses</span>
+Range: 10.0.0.0 → 10.0.255.255
+          </div>
+        </div>
+
+        <div class="answer-section">
+          <h4>Why 10.0.0.0/16 for CampusCart?</h4>
+          <ul class="ans-list">
+            <li><strong>RFC 1918 private range:</strong> 10.x.x.x is a private IP space — not routable on the public internet. Perfect for internal VPC use.</li>
+            <li><strong>65,536 IPs:</strong> Far more than needed now, but leaves room for any future expansion — multiple services, environments, or regions.</li>
+            <li><strong>Standard practice:</strong> 10.0.0.0/16 is the most common VPC CIDR used in AWS architecture guides and production systems.</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h4>Subnet CIDRs — /24</h4>
+          <p>Each of our 4 subnets uses /24, giving 256 total IPs, 251 usable (AWS reserves 5 per subnet).</p>
+          <div class="subnet-visual">
+            <div class="sv-row">
+              <div class="sv-num">/24</div>
+              <div class="sv-ip">10.0.1.0/24</div>
+              <div class="sv-name">Public Subnet 1 — ap-south-1a</div>
+              <div class="sv-tag"><span class="tag b">251 usable</span></div>
+            </div>
+            <div class="sv-row">
+              <div class="sv-num">/24</div>
+              <div class="sv-ip">10.0.2.0/24</div>
+              <div class="sv-name">Public Subnet 2 — ap-south-1b</div>
+              <div class="sv-tag"><span class="tag b">251 usable</span></div>
+            </div>
+            <div class="sv-row">
+              <div class="sv-num">/24</div>
+              <div class="sv-ip">10.0.3.0/24</div>
+              <div class="sv-name">Private Subnet 1 — ap-south-1a</div>
+              <div class="sv-tag"><span class="tag p">251 usable</span></div>
+            </div>
+            <div class="sv-row">
+              <div class="sv-num">/24</div>
+              <div class="sv-ip">10.0.4.0/24</div>
+              <div class="sv-name">Private Subnet 2 — ap-south-1b</div>
+              <div class="sv-tag"><span class="tag p">251 usable</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"CIDR notation describes a range of IP addresses. The /16 means 16 bits are fixed — that leaves 16 free bits, giving us 2 to the power of 16, which is 65,536 IP addresses. We chose <strong>10.0.0.0/16</strong> because the 10.x.x.x range is a private RFC 1918 address space — it's not publicly routable, which is exactly what you want for an internal VPC. Each subnet gets a /24, which gives 251 usable IPs after AWS reserves 5."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="qa-card" id="q3" data-q="What is the difference between a public and private subnet?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q03</div>
+        <div class="q-text">What is the difference between a public and private subnet?</div>
+        <div class="difficulty diff-med"><div class="diff-dot"></div>Medium</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          This is a trick question that most people answer wrong. <strong>There is no inherent difference at the infrastructure level.</strong> A subnet is just a range of IP addresses. What makes it "public" or "private" is entirely determined by <strong>which route table is associated with it</strong>.
+        </div>
+
+        <div class="answer-section">
+          <h4>The Only Real Difference — Route Table</h4>
+          <div class="cmp-grid">
+            <div class="cmp-card a">
+              <h5>PUBLIC SUBNET</h5>
+              Route table has a route:<br>
+              <code style="color:var(--accent3);font-size:11px;">0.0.0.0/0 → igw-xxxxxxx</code><br><br>
+              Resources with public IPs can communicate with the internet. Internet can initiate connections to them.
+            </div>
+            <div class="cmp-card b-card">
+              <h5>PRIVATE SUBNET</h5>
+              Route table has NO internet route.<br>
+              Only has:<br>
+              <code style="color:#a5b4fc;font-size:11px;">10.0.0.0/16 → local</code><br><br>
+              Resources can only talk within the VPC. Internet cannot reach them.
+            </div>
+          </div>
+        </div>
+
+        <div class="answer-section">
+          <h4>CampusCart Architecture Decision</h4>
+          <ul class="ans-list">
+            <li><strong>EC2 in Public Subnet (10.0.1.0/24):</strong> nginx must be reachable from the internet on port 80/443. Must be public.</li>
+            <li><strong>Private subnets (10.0.3.0/24, 10.0.4.0/24):</strong> Reserved for future database (RDS/PostgreSQL) and cache (ElastiCache/Redis). Database should NEVER be directly internet-accessible.</li>
+            <li><strong>Current state:</strong> Docker containers (PostgreSQL, Redis) run on the same EC2 — they're isolated by Docker networking, not AWS subnets. If we migrate to managed services, they'd go in private subnets.</li>
+          </ul>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"The difference is purely in the route table. A public subnet has a route sending <strong>0.0.0.0/0 traffic to the Internet Gateway</strong>, so resources can communicate with the internet. A private subnet has no such route — resources can only communicate within the VPC. For CampusCart, the EC2 instance is in a public subnet because nginx needs to serve HTTP traffic. We have two private subnets reserved for future managed database services like RDS."</p>
+        </div>
+
+        <div class="warn-block">
+          <span class="icon">⚠️</span>
+          <div>Don't say "a public subnet gives public IPs automatically." That's <strong>auto-assign public IP</strong>, a separate setting. The subnet itself being public or private is about the route table, not IP assignment.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="qa-card" id="q4" data-q="How many usable IP addresses does a /24 subnet have in AWS?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q04</div>
+        <div class="q-text">How many usable IP addresses does a /24 subnet have in AWS?</div>
+        <div class="difficulty diff-easy"><div class="diff-dot"></div>Easy</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          A /24 has 256 total IPs (2⁸). But AWS reserves <strong>5 specific IPs</strong> in every subnet, leaving <strong>251 usable IPs</strong>. Knowing WHY each one is reserved is what separates a confident answer from a memorized one.
+        </div>
+
+        <div class="answer-section">
+          <h4>The 5 Reserved IPs — In a /24 (e.g. 10.0.1.0/24)</h4>
+          <table class="ans-table">
+            <thead>
+              <tr><th>IP Address</th><th>Reserved For</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>10.0.1.0</td><td>Network Address</td><td>Identifies the subnet itself. Standard networking convention.</td></tr>
+              <tr><td>10.0.1.1</td><td>VPC Router</td><td>AWS uses this as the default gateway for all instances in the subnet.</td></tr>
+              <tr><td>10.0.1.2</td><td>DNS Server</td><td>AWS VPC DNS always runs at base + 2. Used for Route 53 Resolver.</td></tr>
+              <tr><td>10.0.1.3</td><td>AWS Future Use</td><td>Reserved by AWS for potential future services.</td></tr>
+              <tr><td>10.0.1.255</td><td>Broadcast Address</td><td>AWS doesn't support broadcast, but reserves this per standard convention.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"A /24 has 256 total IPs, but AWS reserves 5 — the network address at .0, the VPC router at .1, the DNS server at .2, a future-use address at .3, and the broadcast address at .255. So each /24 subnet in CampusCart has <strong>251 usable IPs</strong>. For our EC2 deployment, that's more than sufficient."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="qa-card" id="q5" data-q="What is an Internet Gateway and what does it do?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q05</div>
+        <div class="q-text">What is an Internet Gateway and what does it do?</div>
+        <div class="difficulty diff-med"><div class="diff-dot"></div>Medium</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          An <strong>Internet Gateway (IGW)</strong> is the component that connects your VPC to the public internet. Without it, your VPC is a completely sealed private network — nothing in, nothing out. It is a fully managed, horizontally scaled, redundant AWS component — you don't manage it, it never fails, you don't pay hourly for it.
+        </div>
+
+        <div class="answer-section">
+          <h4>What It Does — At Network Level</h4>
+          <ul class="ans-list">
+            <li><strong>Routing anchor:</strong> Route tables point 0.0.0.0/0 traffic to the IGW. The IGW then handles the actual internet routing.</li>
+            <li><strong>1:1 NAT (Network Address Translation):</strong> Your EC2 has a private IP (10.0.1.x). The IGW maps this to your Elastic IP at the gateway level. Inbound packets for the Elastic IP get translated to the private IP. Outbound packets appear to come from the Elastic IP.</li>
+            <li><strong>Bidirectional:</strong> Unlike NAT Gateway, IGW allows traffic in BOTH directions — inbound from internet and outbound to internet.</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h4>CampusCart Traffic Flow Through IGW</h4>
+          <div class="code-snip">
+<span class="cm"># Inbound: User accesses CampusCart</span>
+User Browser → ELASTIC_IP:80
+  → IGW (reverse NAT: Elastic IP → 10.0.1.x)
+  → EC2 Private IP (10.0.1.x:80)
+  → nginx container
+  → serves frontend / proxies to Django
+
+<span class="cm"># Outbound: EC2 calls external API (e.g. Stripe)</span>
+Django → Stripe API (api.stripe.com)
+  → EC2 (10.0.1.x) → Route Table → IGW
+  → IGW (NAT: 10.0.1.x → ELASTIC_IP)
+  → Internet → Stripe
+          </div>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"The Internet Gateway is attached to the CampusCart VPC and acts as the bridge between our private network and the public internet. It performs 1:1 NAT — mapping our EC2's private IP to the Elastic IP for inbound traffic and vice versa for outbound. <strong>Without it, the EC2 would be unreachable from the internet</strong> and couldn't make outbound calls — things like Stripe payment webhooks would fail."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="qa-card" id="q6" data-q="What is a route table? What routes did you configure?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q06</div>
+        <div class="q-text">What is a route table? What routes did you configure?</div>
+        <div class="difficulty diff-med"><div class="diff-dot"></div>Medium</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          A <strong>route table</strong> is a set of rules that determines where network traffic is directed. Every subnet in a VPC must be associated with a route table. When a packet arrives in a subnet, AWS checks the route table to decide where to send it — using the longest prefix match rule.
+        </div>
+
+        <div class="answer-section">
+          <h4>CampusCart Route Tables</h4>
+          <p><strong>Public Route Table</strong> — associated with Public Subnet 1 and Public Subnet 2:</p>
+          <table class="ans-table">
+            <thead><tr><th>Destination</th><th>Target</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td>10.0.0.0/16</td><td>local</td><td>Traffic within VPC stays inside. Auto-created, cannot delete.</td></tr>
+              <tr><td>0.0.0.0/0</td><td>igw-xxxxxxx</td><td>All other traffic → Internet Gateway. This is what makes the subnet "public".</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:12px;"><strong>Private Route Table</strong> — associated with Private Subnet 1 and Private Subnet 2:</p>
+          <table class="ans-table">
+            <thead><tr><th>Destination</th><th>Target</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td>10.0.0.0/16</td><td>local</td><td>Only intra-VPC communication. No internet route = private.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="answer-section">
+          <h4>Longest Prefix Match — How Routing Decisions Work</h4>
+          <p>When two routes could match a destination, AWS picks the <strong>most specific (longest prefix)</strong>. A packet to 10.0.1.5 matches both 10.0.0.0/16 (local) and 0.0.0.0/0 (IGW). The /16 is more specific, so it wins — traffic stays local. A packet to 8.8.8.8 only matches 0.0.0.0/0, so it goes to the IGW.</p>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"I configured two route tables. The public route table has two routes: a local route for 10.0.0.0/16 that keeps intra-VPC traffic internal, and a <strong>0.0.0.0/0 route pointing to the Internet Gateway</strong> for all external traffic. The private route table only has the local route — no internet access at all. This is exactly what makes the subnets public or private. AWS uses longest prefix match to decide which route wins."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CATEGORY: HIGH AVAILABILITY ═══ -->
+    <div class="category-header">
+      <div class="category-line"></div>
+      <div class="category-tag">High Availability</div>
+      <div class="category-line"></div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="qa-card" id="q7" data-q="Why did you use 2 availability zones?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q07</div>
+        <div class="q-text">Why did you use 2 availability zones?</div>
+        <div class="difficulty diff-med"><div class="diff-dot"></div>Medium</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          Each Availability Zone is a physically separate data center with its own power, cooling, and network — within the same region. Using 2 AZs means if one data center has a catastrophic failure (power outage, fire, network cut), the other AZ is completely unaffected. This is the foundation of high availability in AWS.
+        </div>
+
+        <div class="answer-section">
+          <h4>CampusCart's 2 AZs</h4>
+          <div class="cmp-grid">
+            <div class="cmp-card a">
+              <h5>ap-south-1a — Active</h5>
+              Public Subnet 1 (10.0.1.0/24)<br>
+              Private Subnet 1 (10.0.3.0/24)<br><br>
+              <strong>EC2 instance lives here.</strong><br>
+              All application traffic flows through this AZ.
+            </div>
+            <div class="cmp-card b-card">
+              <h5>ap-south-1b — Reserved</h5>
+              Public Subnet 2 (10.0.2.0/24)<br>
+              Private Subnet 2 (10.0.4.0/24)<br><br>
+              <strong>Currently empty.</strong><br>
+              Ready for future Load Balancer + Auto Scaling.
+            </div>
+          </div>
+        </div>
+
+        <div class="warn-block">
+          <span class="icon">⚠️</span>
+          <div><strong>Be honest in the interview:</strong> Currently, all active resources are in ap-south-1a. The second AZ exists to demonstrate multi-AZ architectural awareness and to satisfy the resume bullet point. In a production system with real traffic, you'd use an Application Load Balancer to distribute across both AZs with Auto Scaling Groups deploying EC2 in each.</div>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"I provisioned subnets in two AZs — ap-south-1a and ap-south-1b — to demonstrate the multi-AZ architecture pattern. Each AZ is a physically isolated data center. Currently, the EC2 runs in ap-south-1a, but the infrastructure is designed so that adding a Load Balancer and Auto Scaling Group across both AZs would be straightforward — <strong>the subnets and route tables are already in place</strong>."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="qa-card" id="q8" data-q="What is high availability and how does your architecture achieve it?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q08</div>
+        <div class="q-text">What is high availability and how does your architecture achieve it?</div>
+        <div class="difficulty diff-hard"><div class="diff-dot"></div>Hard</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          <strong>High Availability (HA)</strong> means a system continues to function even when individual components fail. It's measured as uptime percentage — 99.9% HA means roughly 8.7 hours of downtime per year. 99.99% means 52 minutes. The goal is to eliminate single points of failure.
+        </div>
+
+        <div class="answer-section">
+          <h4>HA Principles Applied to CampusCart</h4>
+          <ul class="ans-list">
+            <li><strong>Multi-AZ subnets:</strong> Infrastructure spans 2 AZs. If ap-south-1a data center loses power, ap-south-1b is unaffected.</li>
+            <li><strong>Docker health checks:</strong> Each container has a health check. If the Django container crashes, Docker Compose detects it and restarts it automatically.</li>
+            <li><strong>Depends-on with health checks:</strong> nginx only starts after web is healthy. web only starts after db and redis are healthy. No cascading failures at startup.</li>
+            <li><strong>Named volumes:</strong> PostgreSQL data persists in Docker volumes — EC2 restart doesn't lose database data.</li>
+            <li><strong>Elastic IP:</strong> Static IP means DNS never breaks on EC2 restart.</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h4>Current Limitations (Be Honest)</h4>
+          <ul class="ans-list">
+            <li>Single EC2 instance — if the EC2 itself fails, application goes down. True HA would require Auto Scaling Group across both AZs.</li>
+            <li>Single database container — would need RDS Multi-AZ for production database HA.</li>
+            <li>No Load Balancer — a single entry point. ALB would distribute traffic and automatically route away from unhealthy instances.</li>
+          </ul>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"The architecture achieves HA at the infrastructure level through multi-AZ subnet design — subnets in ap-south-1a and ap-south-1b. At the application level, Docker health checks and depends-on conditions ensure the containers start in order and restart on failure. The Elastic IP ensures DNS stability across EC2 restarts. <strong>For a v1 production system, this is solid.</strong> The natural next step would be an ALB with Auto Scaling across both AZs and RDS Multi-AZ for the database."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CATEGORY: EC2 & COMPUTE ═══ -->
+    <div class="category-header">
+      <div class="category-line"></div>
+      <div class="category-tag">EC2 &amp; Compute</div>
+      <div class="category-line"></div>
+    </div>
+
+    <!-- Q9 -->
+    <div class="qa-card" id="q9" data-q="What is an Elastic IP and why is it needed?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q09</div>
+        <div class="q-text">What is an Elastic IP and why is it needed?</div>
+        <div class="difficulty diff-easy"><div class="diff-dot"></div>Easy</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          An <strong>Elastic IP</strong> is a static, public IPv4 address that belongs to your AWS account — not to a specific EC2 instance. By default, every time you stop and start an EC2 instance, AWS releases the old public IP and assigns a new one. Elastic IP solves this by giving you a permanent, fixed public IP that survives stop/start cycles.
+        </div>
+
+        <div class="answer-section">
+          <h4>Why CampusCart Needs It</h4>
+          <ul class="ans-list">
+            <li><strong>DNS stability:</strong> If we point a domain to our EC2's public IP, every restart would change that IP and break DNS.</li>
+            <li><strong>GitHub Actions SSH:</strong> Our CI/CD pipeline (Soldier 5) SSHs into the EC2 to deploy. If the IP changes, the SSH command in GitHub Actions would fail on the next deployment after any EC2 restart.</li>
+            <li><strong>Stripe webhooks:</strong> Stripe needs to know where to send payment events. A changing IP would break webhook delivery.</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h4>How It Works Technically</h4>
+          <p>The Elastic IP is not directly on the EC2's network interface. It lives at the Internet Gateway level. The IGW maintains a 1:1 NAT mapping: <strong>Elastic IP ↔ EC2 Private IP (10.0.1.x)</strong>. Inside the EC2, running <code style="color:var(--accent)">ifconfig</code> shows only the private IP. The Elastic IP is transparent to the OS.</p>
+        </div>
+
+        <div class="answer-section">
+          <h4>AWS Pricing — Know This for Interviews</h4>
+          <ul class="ans-list">
+            <li><strong>Free:</strong> When associated with a running EC2</li>
+            <li><span style="color:var(--accent5)">~$0.005/hour charged</span> when allocated but not associated with any running instance</li>
+            <li><strong>Soldier 6 note:</strong> When tearing down, RELEASE the Elastic IP — don't just disassociate it</li>
+          </ul>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"Without an Elastic IP, every EC2 stop/start assigns a new public IP. For CampusCart, this would break DNS, GitHub Actions SSH deployments, and Stripe webhook delivery. I allocated an Elastic IP and associated it with the EC2 — now the IP is permanent and stable. <strong>It's free while attached to a running instance</strong>, and works at the IGW level through 1:1 NAT — the EC2 OS itself only ever sees the private 10.0.1.x address."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q10 -->
+    <div class="qa-card" id="q10" data-q="What is the difference between stopping and terminating an EC2 instance?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q10</div>
+        <div class="q-text">What is the difference between stopping and terminating an EC2 instance?</div>
+        <div class="difficulty diff-easy"><div class="diff-dot"></div>Easy</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          This distinction is critical to know — especially because Soldier 6 will stop the EC2 to save costs, but must NOT terminate it until final teardown.
+        </div>
+
+        <div class="answer-section">
+          <h4>Stop vs Terminate</h4>
+          <table class="ans-table">
+            <thead><tr><th>Aspect</th><th>STOP</th><th>TERMINATE</th></tr></thead>
+            <tbody>
+              <tr><td>EBS Root Volume</td><td style="color:var(--accent3)">Preserved</td><td style="color:var(--accent5)">Deleted (by default)</td></tr>
+              <tr><td>Data</td><td style="color:var(--accent3)">Intact</td><td style="color:var(--accent5)">Gone permanently</td></tr>
+              <tr><td>Public IP</td><td style="color:var(--accent4)">Released (dynamic IP)</td><td style="color:var(--accent5)">Released</td></tr>
+              <tr><td>Elastic IP</td><td style="color:var(--accent3)">Stays associated</td><td style="color:var(--accent4)">Disassociated (still yours)</td></tr>
+              <tr><td>Private IP</td><td style="color:var(--accent3)">Preserved</td><td style="color:var(--accent5)">Released</td></tr>
+              <tr><td>Billing</td><td>Only EBS storage charges</td><td>Instance charges stop immediately</td></tr>
+              <tr><td>Reversible?</td><td style="color:var(--accent3)">Yes — Start anytime</td><td style="color:var(--accent5)">No — Permanent</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="warn-block">
+          <span class="icon">🚨</span>
+          <div><strong>Critical for CampusCart:</strong> Soldier 6 should STOP the instance to save costs during verification gaps — never TERMINATE until final teardown. Terminating would destroy all Docker images pulled on EC2, all configurations, everything. We'd have to start from scratch.</div>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"Stopping an EC2 is like shutting down your laptop — the EBS disk, data, and Elastic IP all stay intact, you just stop paying for compute. Terminating is permanent destruction — the instance is gone, the EBS root volume is deleted by default, and it cannot be undone. For CampusCart, <strong>stopping saves cost during off-hours</strong> while preserving everything. Terminating is only done during final infrastructure teardown."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q11 -->
+    <div class="qa-card" id="q11" data-q="What is an AMI?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q11</div>
+        <div class="q-text">What is an AMI?</div>
+        <div class="difficulty diff-easy"><div class="diff-dot"></div>Easy</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          <strong>AMI stands for Amazon Machine Image.</strong> It's a pre-configured template that contains everything needed to launch an EC2 instance — the operating system, installed software, configuration, and optionally your application. It's like a Docker image, but for virtual machines.
+        </div>
+
+        <div class="answer-section">
+          <h4>What an AMI Contains</h4>
+          <ul class="ans-list">
+            <li><strong>Root volume snapshot:</strong> The OS disk — Ubuntu, Amazon Linux, Windows, etc.</li>
+            <li><strong>Launch permissions:</strong> Which AWS accounts can use this AMI (public, private, shared)</li>
+            <li><strong>Block device mappings:</strong> What EBS volumes to attach and their sizes</li>
+            <li><strong>Architecture:</strong> x86_64 or arm64 (Graviton)</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h4>CampusCart's AMI</h4>
+          <div class="code-snip">
+AMI ID:   ami-0f58b397bc5c1f2e8
+Name:     Ubuntu Server 22.04 LTS (HVM), SSD Volume Type
+Region:   ap-south-1 (Mumbai)
+Provider: Canonical (official Ubuntu publisher)
+Arch:     x86_64
+Type:     HVM (Hardware Virtual Machine) — full virtualization
+          </div>
+          <p>AMI IDs are region-specific. The same Ubuntu 22.04 in us-east-1 has a completely different AMI ID. This is important when writing cross-region infrastructure scripts.</p>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"An AMI is a template for launching EC2 instances — it contains the OS, software, and disk configuration. Think of it like a Docker image for VMs. For CampusCart, I used the official <strong>Ubuntu 22.04 LTS AMI from Canonical</strong> in ap-south-1. When EC2 launches, it copies that AMI onto a fresh EBS volume and boots from it. AMI IDs are region-specific — the same Ubuntu image has different IDs in different regions."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q12 -->
+    <div class="qa-card" id="q12" data-q="Why Ubuntu 22.04 LTS specifically?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q12</div>
+        <div class="q-text">Why Ubuntu 22.04 LTS specifically?</div>
+        <div class="difficulty diff-easy"><div class="diff-dot"></div>Easy</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          Every technology choice in a production system should have a reason. Ubuntu 22.04 LTS was not chosen randomly — it was the best fit for CampusCart's requirements across several dimensions.
+        </div>
+
+        <div class="answer-section">
+          <h4>Every Reason — Be Ready to Defend Each One</h4>
+          <ul class="ans-list">
+            <li><strong>LTS = Long Term Support:</strong> Canonical provides security patches and updates until April 2027 (5 years). Non-LTS Ubuntu versions only get 9 months of support. For a production server, you want years of security updates without forced OS upgrades.</li>
+            <li><strong>Same OS as local dev:</strong> Bharath develops on Ubuntu locally. Zero environment mismatch. What works locally works on EC2 — no "works on my machine" problems.</li>
+            <li><strong>Industry standard:</strong> Ubuntu is the most widely deployed Linux distro in cloud environments. All AWS documentation, Docker documentation, nginx guides, and DevOps tutorials use Ubuntu examples.</li>
+            <li><strong>apt package manager:</strong> Docker, AWS CLI, nginx, Python — all install cleanly via apt. No compilation from source needed.</li>
+            <li><strong>Docker compatibility:</strong> Docker officially supports Ubuntu 22.04 and provides first-class packages for it.</li>
+            <li><strong>Free tier compatibility:</strong> t2.micro with Ubuntu 22.04 is free tier eligible.</li>
+          </ul>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"Ubuntu 22.04 LTS for three main reasons: first, <strong>LTS means 5 years of security updates</strong> until 2027, so we don't need to force-upgrade the OS during the project lifetime. Second, it's the same OS I develop on locally — eliminating environment inconsistencies. Third, it's the industry standard for cloud Linux — Docker, AWS CLI, and all tooling we use have first-class Ubuntu support."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CATEGORY: SECURITY ═══ -->
+    <div class="category-header">
+      <div class="category-line"></div>
+      <div class="category-tag">Security</div>
+      <div class="category-line"></div>
+    </div>
+
+    <!-- Q13 -->
+    <div class="qa-card" id="q13" data-q="How does SSH work at the network level?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q13</div>
+        <div class="q-text">How does SSH work at the network level?</div>
+        <div class="difficulty diff-hard"><div class="diff-dot"></div>Hard</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          SSH (Secure Shell) is a <strong>cryptographic network protocol</strong> for secure remote access. It operates on TCP port 22. It uses <strong>asymmetric cryptography</strong> for authentication and then switches to a faster symmetric cipher for the actual session data. Understanding the handshake is what separates candidates.
+        </div>
+
+        <div class="answer-section">
+          <h4>The SSH Handshake — Step by Step</h4>
+          <ul class="ans-list">
+            <li><strong>TCP Connection:</strong> Client initiates TCP connection to EC2 on port 22. Security Group must allow inbound port 22.</li>
+            <li><strong>Protocol negotiation:</strong> Client and server agree on SSH version and cipher suite.</li>
+            <li><strong>Server host key:</strong> Server sends its public host key. First connection: client is asked to verify fingerprint (yes/no). Stored in ~/.ssh/known_hosts.</li>
+            <li><strong>Key exchange (Diffie-Hellman):</strong> Client and server negotiate a shared symmetric session key without sending it over the network. This key encrypts all subsequent communication.</li>
+            <li><strong>Authentication:</strong> Server sends challenge encrypted with client's public key (from authorized_keys). Client decrypts it using private key (.pem file). Decrypted response proves client has the private key without ever exposing it.</li>
+            <li><strong>Session established:</strong> All further communication — commands, output, file transfers — is encrypted with the symmetric session key.</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h4>The SSH Command for CampusCart EC2</h4>
+          <div class="code-snip">
+ssh -i campuscart-key.pem ubuntu@<span class="kw">ELASTIC_IP</span>
+
+<span class="cm"># Breakdown:
+# -i campuscart-key.pem  → use this private key file for auth
+# ubuntu                 → default user for Ubuntu AMIs on AWS
+# ELASTIC_IP             → the static public IP we allocated
+#
+# What happens at network level:
+# 1. TCP SYN → EC2:22 (allowed by Security Group)
+# 2. SSH handshake (host key verification, key exchange)
+# 3. Auth challenge/response using .pem file
+# 4. Encrypted session established
+# 5. You get a shell on the EC2</span>
+          </div>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"SSH uses asymmetric cryptography for authentication. AWS stores the public key on the EC2 in authorized_keys. I keep the private key in the .pem file. During the handshake, the server sends a challenge encrypted with my public key — <strong>only my private key can decrypt it</strong>. This proves my identity without ever sending the private key over the network. Then all session traffic is encrypted with a symmetric session key negotiated via Diffie-Hellman."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q14 -->
+    <div class="qa-card" id="q14" data-q="What is a .pem file and why chmod 400?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q14</div>
+        <div class="q-text">What is a .pem file and why chmod 400?</div>
+        <div class="difficulty diff-easy"><div class="diff-dot"></div>Easy</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          A <strong>.pem file</strong> (Privacy Enhanced Mail, historical name) is a Base64-encoded file containing a cryptographic key. In AWS's case, it's your <strong>RSA or Ed25519 private key</strong> in PEM format. It's the "secret half" of the key pair — AWS keeps the public half on your EC2.
+        </div>
+
+        <div class="answer-section">
+          <h4>Why chmod 400?</h4>
+          <p>Linux file permissions are 3 sets of 3 bits: <strong>[owner][group][others]</strong>. Each set: read(4), write(2), execute(1).</p>
+          <div class="code-snip">
+chmod 400 campuscart-key.pem
+
+<span class="cm"># 4 = read-only for OWNER
+# 0 = no permissions for GROUP
+# 0 = no permissions for OTHERS
+#
+# In bits: 100 000 000
+# Owner: r-- (read only)
+# Group: --- (nothing)
+# Others: --- (nothing)
+#
+# SSH will REFUSE to use the key if permissions are too open:
+# "WARNING: UNPROTECTED PRIVATE KEY FILE!"
+# "Permissions 0644 for 'campuscart-key.pem' are too open"
+# "It is required that your private key files are NOT accessible by others."</span>
+          </div>
+          <p>The SSH client enforces this as a security check. If your private key is readable by other users on the system, they could steal it and access your EC2. The check protects you from accidentally exposing it.</p>
+        </div>
+
+        <div class="answer-section">
+          <h4>Security Rules for .pem Files</h4>
+          <ul class="ans-list">
+            <li><strong>Never commit to Git:</strong> Add *.pem to .gitignore. One accidental commit and the key is on GitHub forever (even if you delete it, it's in git history).</li>
+            <li><strong>Never share it:</strong> Give a colleague access by adding THEIR public key to authorized_keys instead.</li>
+            <li><strong>If lost:</strong> Create a new key pair. You'll need to access EC2 another way (AWS console) to update authorized_keys.</li>
+            <li><strong>If compromised:</strong> Remove that public key from EC2's authorized_keys immediately.</li>
+          </ul>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"The .pem file contains my RSA private key in PEM format. <code style="color:var(--accent3)">chmod 400</code> sets it to read-only for the owner, and no permissions for group or others. SSH enforces this as a security check — <strong>if the file is readable by anyone else on the system, SSH refuses to use it</strong> and throws an 'unprotected private key file' error. It's a protection against accidentally exposing your private key to other system users."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q15 -->
+    <div class="qa-card" id="q15" data-q="What is the difference between an Internet Gateway and a NAT Gateway?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q15</div>
+        <div class="q-text">What is the difference between an Internet Gateway and a NAT Gateway?</div>
+        <div class="difficulty diff-hard"><div class="diff-dot"></div>Hard</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          Both handle traffic between your VPC and the internet, but they serve fundamentally different purposes. Understanding both — and when to use each — is a key AWS architecture question.
+        </div>
+
+        <div class="answer-section">
+          <h4>Side by Side Comparison</h4>
+          <table class="ans-table">
+            <thead><tr><th>Aspect</th><th>Internet Gateway</th><th>NAT Gateway</th></tr></thead>
+            <tbody>
+              <tr><td>Traffic Direction</td><td>Bidirectional (in + out)</td><td>Outbound only from private subnets</td></tr>
+              <tr><td>Used With</td><td>Public subnets</td><td>Private subnets needing internet access</td></tr>
+              <tr><td>Inbound from Internet?</td><td style="color:var(--accent3)">Yes</td><td style="color:var(--accent5)">No</td></tr>
+              <tr><td>Public IP Requirement</td><td>Resources need public/Elastic IP</td><td>No public IP needed on resources</td></tr>
+              <tr><td>Cost</td><td>Free (data transfer only)</td><td>~$0.045/hr + $0.045/GB data</td></tr>
+              <tr><td>Availability</td><td>Fully managed, no HA concern</td><td>Per-AZ — deploy one per AZ for HA</td></tr>
+              <tr><td>CampusCart Uses?</td><td style="color:var(--accent3)">Yes</td><td style="color:var(--accent5)">No (would cost ~$33/month for nothing)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="answer-section">
+          <h4>When You'd Use NAT Gateway</h4>
+          <p>If CampusCart used RDS in a private subnet, and that RDS instance needed to download OS patches — RDS can't have a public IP. You'd place a NAT Gateway in the public subnet and route private subnet traffic through it. The NAT Gateway has its own Elastic IP, so outbound traffic appears to come from the NAT Gateway's IP. Inbound internet traffic still cannot reach RDS directly.</p>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"The Internet Gateway enables bidirectional internet access for resources with public IPs in public subnets. NAT Gateway provides outbound-only internet access for resources in private subnets — they can initiate connections out but the internet cannot initiate connections in. CampusCart uses only an Internet Gateway because <strong>our EC2 is in a public subnet and needs to be reachable</strong>. We don't use NAT Gateway because our private subnets have no resources that need internet access, and NAT Gateway costs ~$33/month."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q16 -->
+    <div class="qa-card" id="q16" data-q="What is the difference between a Security Group and a Network ACL?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q16</div>
+        <div class="q-text">What is the difference between a Security Group and a Network ACL?</div>
+        <div class="difficulty diff-hard"><div class="diff-dot"></div>Hard</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          Both are firewall mechanisms in AWS, but they operate at completely different layers. Security Groups are attached to <strong>instances (or load balancers)</strong>. Network ACLs are attached to <strong>subnets</strong>. Understanding both is essential for cloud security interviews.
+        </div>
+
+        <div class="answer-section">
+          <h4>Key Differences</h4>
+          <table class="ans-table">
+            <thead><tr><th>Aspect</th><th>Security Group</th><th>Network ACL</th></tr></thead>
+            <tbody>
+              <tr><td>Applies To</td><td>EC2 instances, ENIs</td><td>Entire subnets</td></tr>
+              <tr><td>Statefulness</td><td style="color:var(--accent3)">Stateful — return traffic auto-allowed</td><td style="color:var(--accent5)">Stateless — must explicitly allow both directions</td></tr>
+              <tr><td>Rules</td><td>Allow only (no deny rules)</td><td>Allow AND Deny rules</td></tr>
+              <tr><td>Rule Evaluation</td><td>All rules evaluated together</td><td>Rules evaluated in order (lowest number first)</td></tr>
+              <tr><td>Default Behavior</td><td>Deny all inbound, allow all outbound</td><td>Allow all traffic (default ACL)</td></tr>
+              <tr><td>Typical Use</td><td>Instance-level firewall</td><td>Subnet-level extra layer, blocking specific IPs</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="answer-section">
+          <h4>CampusCart Security Group (Soldier 3's Work)</h4>
+          <ul class="ans-list">
+            <li><strong>Port 80 (HTTP):</strong> Inbound from 0.0.0.0/0 — anyone can access the website</li>
+            <li><strong>Port 443 (HTTPS):</strong> Inbound from 0.0.0.0/0 — for future SSL</li>
+            <li><strong>Port 22 (SSH):</strong> Inbound from Bharath's IP only — not the whole internet</li>
+            <li><strong>All outbound:</strong> Allowed — EC2 needs to call Stripe, apt-get, Docker pull, etc.</li>
+          </ul>
+          <p style="margin-top:10px;"><strong>Stateful explained:</strong> When a user makes a request to port 80, the Security Group allows it in. The response traffic (EC2 → user) is automatically allowed out — you don't need a separate outbound rule for port 80 responses.</p>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"Security Groups are instance-level, stateful firewalls — if I allow port 80 inbound, the response traffic is automatically allowed outbound. Network ACLs are subnet-level, stateless firewalls — I'd need explicit rules for both directions. For CampusCart, Security Groups are sufficient: <strong>port 80 and 443 from anywhere, port 22 restricted to my IP only</strong>. Network ACLs would be an additional layer for blocking specific malicious IP ranges at subnet level."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CATEGORY: ARCHITECTURE DECISIONS ═══ -->
+    <div class="category-header">
+      <div class="category-line"></div>
+      <div class="category-tag">Architecture Decisions</div>
+      <div class="category-line"></div>
+    </div>
+
+    <!-- Q17 -->
+    <div class="qa-card" id="q17" data-q="If AZ ap-south-1a goes down, what happens to your application?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q17</div>
+        <div class="q-text">If AZ ap-south-1a goes down, what happens to your application?</div>
+        <div class="difficulty diff-hard"><div class="diff-dot"></div>Hard</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          This is a <strong>trap question</strong>. The honest answer is: the application goes down. The EC2 is in ap-south-1a. If that AZ fails, CampusCart is unavailable. But the key is how you answer — explain what the architecture would need to avoid this, and why it's acceptable for this project stage.
+        </div>
+
+        <div class="answer-section">
+          <h4>Honest Current State</h4>
+          <ul class="ans-list">
+            <li>EC2 instance is in ap-south-1a Public Subnet only</li>
+            <li>If ap-south-1a fails: EC2 goes down → all 4 Docker containers stop → CampusCart is offline</li>
+            <li>The Elastic IP stays associated (it's account-level), but there's nothing to route to</li>
+            <li>ap-south-1b subnets exist but have no resources</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h4>What True Multi-AZ HA Would Look Like</h4>
+          <ul class="ans-list">
+            <li><strong>Application Load Balancer:</strong> Spans both AZs. Routes traffic to healthy targets. If ap-south-1a goes down, ALB only sends to ap-south-1b.</li>
+            <li><strong>Auto Scaling Group:</strong> Launches EC2 instances in BOTH AZs. Desired: 2 instances (1 per AZ). If one fails, ASG launches a replacement.</li>
+            <li><strong>RDS Multi-AZ:</strong> Primary in ap-south-1a, standby replica in ap-south-1b. Automatic failover in ~60-120 seconds.</li>
+            <li><strong>ElastiCache Multi-AZ:</strong> Redis with replicas across AZs.</li>
+          </ul>
+        </div>
+
+        <div class="warn-block">
+          <span class="icon">🎯</span>
+          <div><strong>Why This Is Acceptable for CampusCart v1:</strong> AZ failures are extremely rare — AWS has had very few in its history. For a portfolio project demonstrating DevOps skills, a single-AZ deployment with multi-AZ infrastructure design is appropriate. The subnets and route tables are already in place to scale to true multi-AZ when needed.</div>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"Honestly — the application would go down because the EC2 is only in ap-south-1a. True AZ-level fault tolerance requires an Application Load Balancer spanning both AZs with an Auto Scaling Group deploying instances in each. <strong>The infrastructure is designed for this</strong> — both AZs have public subnets, both have private subnets, route tables are configured — the next step is adding the ALB and ASG. For v1, this tradeoff is deliberate: AZ failures are extremely rare and the cost of multi-instance deployment wasn't justified for a portfolio project."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q18 -->
+    <div class="qa-card" id="q18" data-q="Why is the database NOT in the private subnet in this project?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q18</div>
+        <div class="q-text">Why is the database NOT in the private subnet in this project?</div>
+        <div class="difficulty diff-med"><div class="diff-dot"></div>Medium</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          This is another question testing your honesty and architectural awareness. The database is NOT in a private subnet because <strong>CampusCart uses Dockerized PostgreSQL running as a container on the EC2</strong> — not AWS RDS. The database and the application are on the same server, inside Docker's internal network.
+        </div>
+
+        <div class="answer-section">
+          <h4>Current Architecture — Why Docker</h4>
+          <ul class="ans-list">
+            <li>PostgreSQL runs as a Docker container (<code style="color:var(--accent)">postgres:15-alpine</code>) on the same EC2</li>
+            <li>It's isolated inside Docker's internal bridge network (<code style="color:var(--accent)">campuscart_network</code>)</li>
+            <li>No port is exposed to the host or internet — only the web container connects to it internally</li>
+            <li>This is actually MORE isolated than an RDS in a private subnet in some ways — no port exposed at all</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h4>If We Used RDS Instead — Then Private Subnet</h4>
+          <ul class="ans-list">
+            <li>RDS is a managed AWS service — it has its own network interface in the VPC</li>
+            <li>It would live in Private Subnet 1 (10.0.3.0/24) — no internet route</li>
+            <li>EC2's Security Group would be allowed to connect to RDS's Security Group on port 5432</li>
+            <li>No one on the internet could ever connect directly to the database</li>
+          </ul>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"PostgreSQL runs as a Docker container on the same EC2 — it's not a separate AWS service, so AWS subnet placement doesn't apply. The database is isolated by Docker's internal bridge network and has no ports exposed to the host. The private subnets (10.0.3.0/24 and 10.0.4.0/24) <strong>are designed for managed services like RDS</strong> — if we migrated to RDS, it would go there. The private subnets exist and are configured — they're ready when we need them."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q19 -->
+    <div class="qa-card" id="q19" data-q="What is the AWS shared responsibility model?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q19</div>
+        <div class="q-text">What is the AWS shared responsibility model?</div>
+        <div class="difficulty diff-med"><div class="diff-dot"></div>Medium</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          The <strong>Shared Responsibility Model</strong> defines the boundary of security obligations between AWS and the customer. The simplest way to remember it: <strong>AWS secures the cloud. You secure what's in the cloud.</strong>
+        </div>
+
+        <div class="answer-section">
+          <h4>AWS's Responsibility — Security OF the Cloud</h4>
+          <ul class="ans-list">
+            <li>Physical data center security (guards, cameras, biometrics)</li>
+            <li>Hardware (servers, networking equipment, storage)</li>
+            <li>Hypervisor and host isolation (KVM/Nitro — your EC2 cannot interfere with another customer's)</li>
+            <li>Global network infrastructure (fiber, edge PoPs)</li>
+            <li>Managed services infrastructure (the underlying RDS servers, S3 hardware, etc.)</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h4>Your Responsibility — Security IN the Cloud (CampusCart)</h4>
+          <ul class="ans-list">
+            <li><strong>OS patching:</strong> <code style="color:var(--accent)">apt-get update && apt-get upgrade</code> — AWS doesn't patch your Ubuntu for you</li>
+            <li><strong>Security Groups:</strong> Configuring which ports are open, restricting SSH to your IP only</li>
+            <li><strong>IAM roles:</strong> Giving EC2 only the permissions it needs (SSM read, ECR pull) — not admin access</li>
+            <li><strong>Secrets management:</strong> Using SSM Parameter Store instead of hardcoding credentials</li>
+            <li><strong>Application security:</strong> Keeping Django, Python packages updated. Validating inputs. JWT token security.</li>
+            <li><strong>Git hygiene:</strong> .env in .gitignore, never committing secrets or .pem files</li>
+          </ul>
+        </div>
+
+        <div class="say-block">
+          <div class="say-label">What to Say in the Interview</div>
+          <p>"AWS handles everything physical and below the hypervisor — hardware, data center security, network infrastructure. I'm responsible for everything above: OS patching, application security, network configuration via Security Groups, IAM permissions, and secrets management. For CampusCart, I implement this by using <strong>IAM roles with minimal permissions</strong>, storing secrets in SSM Parameter Store (not in code), restricting SSH to my IP only, and keeping .env out of version control."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q20 -->
+    <div class="qa-card" id="q20" data-q="How would you explain your AWS architecture to a non-technical person?">
+      <div class="qa-header" onclick="toggleCard(this)">
+        <div class="q-badge">Q20</div>
+        <div class="q-text">How would you explain your AWS architecture to a non-technical person?</div>
+        <div class="difficulty diff-med"><div class="diff-dot"></div>Medium</div>
+        <div class="q-toggle">+</div>
+      </div>
+      <div class="qa-body">
+        <div class="answer-intro">
+          This question tests your communication skills as much as your technical knowledge. A senior engineer should be able to explain complex systems using simple analogies. The goal is to convey the essential concepts without losing the listener in jargon.
+        </div>
+
+        <div class="answer-section">
+          <h4>The Building Analogy</h4>
+          <p>Use this explanation in the interview:</p>
+          <div class="say-block" style="margin-top:0;">
+            <div class="say-label">The Answer — Speak Exactly This</div>
+            <p>"Imagine AWS is a massive, secure office building in Mumbai. I rented a private floor in that building — that's my VPC. Nobody else can enter my floor without permission.</p>
+            <p style="margin-top:10px;">On my floor, I divided the space into rooms. Some rooms have windows to the outside world — those are my public subnets, where the web server lives. Other rooms have no windows — those are my private subnets, reserved for sensitive things like databases.</p>
+            <p style="margin-top:10px;">The Internet Gateway is the building's reception desk — it controls who comes in and what goes out. Anyone can visit the web server room, but only I can enter through the back door (SSH) because only I have the key card (.pem file).</p>
+            <p style="margin-top:10px;">The Elastic IP is like a permanent address — even if I temporarily close the office for the night and reopen it next morning, the address doesn't change, and people can always find us.</p>
+            <p style="margin-top:10px;">And I set all of this up in a building that has <strong>two separate wings</strong> (two availability zones) — so if one wing has a power cut, the other is completely unaffected."</p>
+          </div>
+        </div>
+
+        <div class="key-point">
+          <span class="icon">💡</span>
+          <div><strong>Why this answer is powerful:</strong> It covers VPC, public/private subnets, Internet Gateway, SSH security, Elastic IP, and AZ redundancy — all without using a single technical term. Interviewers love this because it proves you truly understand the concepts, not just memorized them.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLETION BANNER -->
+    <div class="complete-banner">
+      <h3>All 20 Questions Complete 🎖️</h3>
+      <p>You now have CampusCart-specific answers for every AWS infrastructure question an interviewer can throw at you.</p>
+      <div class="tag-row" style="justify-content:center;margin-top:16px;">
+        <span class="tag b">VPC ✓</span>
+        <span class="tag b">CIDR ✓</span>
+        <span class="tag b">Subnets ✓</span>
+        <span class="tag b">IGW ✓</span>
+        <span class="tag g">Route Tables ✓</span>
+        <span class="tag g">EC2 ✓</span>
+        <span class="tag g">SSH ✓</span>
+        <span class="tag g">Elastic IP ✓</span>
+        <span class="tag y">HA ✓</span>
+        <span class="tag y">Security ✓</span>
+        <span class="tag p">Architecture ✓</span>
+      </div>
+      <p style="margin-top:20px;font-size:13px;color:var(--text3);">Next → Phase 3: AWS CLI Setup + Phase 4: Resource Creation</p>
+    </div>
+
+  </div><!-- /qa-content -->
+</main>
+</div><!-- /layout -->
+
+<script>
+  // Progress bar
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    document.getElementById('progress').style.width = (window.scrollY / h * 100) + '%';
+  });
+
+  // Toggle card
+  let openedCards = new Set();
+
+  function toggleCard(header) {
+    const card = header.closest('.qa-card');
+    const wasOpen = card.classList.contains('open');
+    card.classList.toggle('open', !wasOpen);
+
+    if (!wasOpen) {
+      const id = card.id;
+      openedCards.add(id);
+      updateScore();
+    }
+  }
+
+  function updateScore() {
+    const count = openedCards.size;
+    document.getElementById('openedCount').textContent = count + ' / 20';
+    document.getElementById('scoreFill').style.width = (count / 20 * 100) + '%';
+  }
+
+  // Active nav on scroll
+  const cards = document.querySelectorAll('.qa-card');
+  const navLinks = document.querySelectorAll('.nav-q');
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        navLinks.forEach(l => {
+          l.classList.toggle('active', l.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+
+  cards.forEach(c => obs.observe(c));
+
+  // Fade in
+  const fadeObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        fadeObs.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -60px 0px' });
+
+  cards.forEach(c => fadeObs.observe(c));
+
+  // Search
+  document.getElementById('searchInput').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    cards.forEach(card => {
+      const text = card.getAttribute('data-q').toLowerCase();
+      card.classList.toggle('hidden-search', q.length > 0 && !text.includes(q));
+    });
+  });
+</script>
+</body>
+</html>

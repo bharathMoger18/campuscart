@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Concepts — CampusCart DevOps</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d14;
+    --bg2: #0f1420;
+    --bg3: #141928;
+    --panel: #161c2e;
+    --border: #1e2a42;
+    --border2: #253352;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.7;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--border);
+    z-index: 999;
+  }
+  #progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+    width: 0%;
+    transition: width 0.1s;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .sidebar-brand {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-brand .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .sidebar-brand h1 {
+    font-family: var(--sans);
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .sidebar-brand .sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+    font-family: var(--mono);
+  }
+
+  .sidebar-nav { padding: 16px 0; flex: 1; }
+
+  .nav-section-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 12px 24px 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 24px;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 13px;
+    font-family: var(--body);
+    transition: all 0.2s;
+    border-left: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .nav-item:hover {
+    color: var(--text);
+    background: rgba(0,212,255,0.05);
+    border-left-color: var(--accent);
+  }
+
+  .nav-item.active {
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+    border-left-color: var(--accent);
+  }
+
+  .nav-item .num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    min-width: 24px;
+  }
+
+  .nav-item.active .num { color: var(--accent); }
+
+  .nav-item.qa-link { border-left-color: transparent; }
+  .nav-item.qa-link:hover { border-left-color: var(--accent2); }
+  .nav-item.qa-link.active { color: var(--accent2); background: rgba(124,58,237,0.08); border-left-color: var(--accent2); }
+
+  .sidebar-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  .soldier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    color: var(--accent);
+    font-family: var(--mono);
+    margin-top: 8px;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    margin-left: 280px;
+    flex: 1;
+    min-height: 100vh;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 64px 50px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: 200px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 30px; height: 1px;
+    background: var(--accent);
+  }
+
+  .hero h1 {
+    font-family: var(--sans);
+    font-size: 46px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #e2e8f0 0%, #00d4ff 50%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-desc {
+    font-size: 16px;
+    color: var(--text2);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .hero-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .hero-stat .val {
+    font-family: var(--sans);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .hero-stat .lbl {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── CONTENT ── */
+  .content { padding: 0 64px 80px; }
+
+  /* ── CONCEPT SECTION ── */
+  .concept-section {
+    padding: 56px 0 48px;
+    border-bottom: 1px solid var(--border);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+
+  .concept-section.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 36px;
+  }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.15);
+    padding: 6px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    margin-top: 4px;
+  }
+
+  .section-title-block h2 {
+    font-family: var(--sans);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .section-sub {
+    font-size: 13px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  /* ── TEACH BLOCKS ── */
+  .teach-block {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .teach-block.highlight {
+    border-color: rgba(0,212,255,0.2);
+    background: linear-gradient(135deg, rgba(0,212,255,0.03) 0%, var(--panel) 100%);
+  }
+
+  .teach-block.warning {
+    border-color: rgba(245,158,11,0.25);
+    background: linear-gradient(135deg, rgba(245,158,11,0.04) 0%, var(--panel) 100%);
+  }
+
+  .teach-block.danger {
+    border-color: rgba(239,68,68,0.25);
+    background: linear-gradient(135deg, rgba(239,68,68,0.04) 0%, var(--panel) 100%);
+  }
+
+  .teach-block.success {
+    border-color: rgba(16,185,129,0.25);
+    background: linear-gradient(135deg, rgba(16,185,129,0.04) 0%, var(--panel) 100%);
+  }
+
+  .block-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .teach-block.warning .block-label { color: var(--accent4); }
+  .teach-block.danger .block-label { color: var(--accent5); }
+  .teach-block.success .block-label { color: var(--accent3); }
+
+  .teach-block p { color: var(--text2); margin-bottom: 10px; }
+  .teach-block p:last-child { margin-bottom: 0; }
+  .teach-block strong { color: var(--text); }
+
+  .accent  { color: var(--accent); }
+  .green   { color: var(--accent3); }
+  .yellow  { color: var(--accent4); }
+  .red     { color: var(--accent5); }
+  .purple  { color: var(--accent2); }
+
+  /* ── CODE BLOCKS ── */
+  .code-block {
+    background: #070a10;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 18px 22px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    color: #a8b4c8;
+    overflow-x: auto;
+    margin: 16px 0;
+    position: relative;
+  }
+
+  .code-block .comment { color: #3d5273; font-style: italic; }
+  .code-block .key     { color: #7c3aed; }
+  .code-block .val     { color: #10b981; }
+  .code-block .str     { color: #f59e0b; }
+  .code-block .kw      { color: #00d4ff; }
+  .code-block .cmd     { color: #e2e8f0; }
+  .code-block .prompt  { color: #3d5273; user-select: none; }
+
+  .code-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+
+  /* ── CONCEPT LISTS ── */
+  .concept-list {
+    list-style: none;
+    color: var(--text2);
+  }
+
+  .concept-list li {
+    padding: 6px 0 6px 20px;
+    position: relative;
+    border-bottom: 1px solid rgba(30,42,66,0.5);
+  }
+
+  .concept-list li:last-child { border-bottom: none; }
+
+  .concept-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  /* ── COMPARISON GRID ── */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .compare-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .compare-card.bad  { border-color: rgba(239,68,68,0.3); }
+  .compare-card.good { border-color: rgba(16,185,129,0.3); }
+
+  .compare-card h4 {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .compare-card.bad  h4 { color: var(--accent5); }
+  .compare-card.good h4 { color: var(--accent3); }
+
+  .compare-card p, .compare-card li {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  .compare-card ul { list-style: none; }
+  .compare-card ul li { padding: 4px 0 4px 16px; position: relative; }
+  .compare-card.bad  ul li::before { content: '✗'; position: absolute; left: 0; color: var(--accent5); }
+  .compare-card.good ul li::before { content: '✓'; position: absolute; left: 0; color: var(--accent3); }
+
+  /* ── IAM FLOW DIAGRAM ── */
+  .flow-diagram {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  .flow-node {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 18px;
+    display: inline-block;
+    color: var(--text);
+    margin: 4px 0;
+  }
+
+  .flow-node.accent-node  { border-color: rgba(0,212,255,0.4); color: var(--accent); }
+  .flow-node.green-node   { border-color: rgba(16,185,129,0.4); color: var(--accent3); }
+  .flow-node.purple-node  { border-color: rgba(124,58,237,0.4); color: var(--accent2); }
+  .flow-node.yellow-node  { border-color: rgba(245,158,11,0.4); color: var(--accent4); }
+
+  .flow-arrow {
+    color: var(--text3);
+    padding: 0 12px;
+    display: block;
+    text-align: center;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  /* ── POLICY TABLE ── */
+  .policy-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  .policy-table th {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  .policy-table td {
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    color: var(--text2);
+    vertical-align: top;
+  }
+
+  .policy-table tr:hover td { background: rgba(30,42,66,0.3); }
+  .policy-table td:first-child { font-family: var(--mono); font-size: 12px; color: var(--accent3); }
+  .policy-table td code { font-family: var(--mono); font-size: 12px; color: var(--accent); background: var(--bg3); padding: 1px 6px; border-radius: 3px; }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+
+  .callout.tip    { border-left: 3px solid var(--accent3); }
+  .callout.warn   { border-left: 3px solid var(--accent4); }
+  .callout.danger { border-left: 3px solid var(--accent5); }
+  .callout.info   { border-left: 3px solid var(--accent); }
+
+  .callout .icon { font-size: 16px; margin-top: 1px; }
+  .callout strong { color: var(--text); }
+
+  /* ── TAGS ── */
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .tag.blue   { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+  .tag.green  { background: rgba(16,185,129,0.1); color: var(--accent3); border: 1px solid rgba(16,185,129,0.2); }
+  .tag.purple { background: rgba(124,58,237,0.1); color: var(--accent2); border: 1px solid rgba(124,58,237,0.2); }
+  .tag.yellow { background: rgba(245,158,11,0.1); color: var(--accent4); border: 1px solid rgba(245,158,11,0.2); }
+  .tag.red    { background: rgba(239,68,68,0.1); color: var(--accent5); border: 1px solid rgba(239,68,68,0.2); }
+
+  /* ── INTERVIEW Q&A SECTION ── */
+  .qa-section {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 0 -64px;
+    padding: 60px 64px;
+  }
+
+  .qa-section-header {
+    margin-bottom: 48px;
+  }
+
+  .qa-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .qa-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 30px; height: 1px;
+    background: var(--accent2);
+  }
+
+  .qa-section-header h2 {
+    font-family: var(--sans);
+    font-size: 36px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #e2e8f0 0%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .qa-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .qa-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .qa-card:hover { border-color: var(--border2); }
+
+  .qa-question {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 24px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .qa-q-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent2);
+    background: rgba(124,58,237,0.1);
+    border: 1px solid rgba(124,58,237,0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
+  .qa-q-text {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .qa-toggle {
+    font-size: 18px;
+    color: var(--text3);
+    transition: transform 0.3s;
+    margin-top: 2px;
+  }
+
+  .qa-card.open .qa-toggle { transform: rotate(45deg); color: var(--accent); }
+
+  .qa-answer {
+    display: none;
+    padding: 0 24px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .qa-card.open .qa-answer { display: block; }
+
+  .qa-answer-inner {
+    padding-top: 20px;
+  }
+
+  .qa-answer p {
+    color: var(--text2);
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .qa-answer p:last-child { margin-bottom: 0; }
+  .qa-answer strong { color: var(--text); }
+  .qa-answer code {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    background: var(--bg3);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .answer-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .answer-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .qa-answer ul {
+    list-style: none;
+    margin: 10px 0;
+  }
+
+  .qa-answer ul li {
+    padding: 5px 0 5px 18px;
+    position: relative;
+    font-size: 14px;
+    color: var(--text2);
+  }
+
+  .qa-answer ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent2);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border2), transparent);
+    margin: 40px 0;
+  }
+
+  /* ── IMDS FLOW ── */
+  .imds-flow {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.9;
+  }
+
+  .imds-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .imds-step:last-child { border-bottom: none; }
+
+  .imds-step-num {
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.2);
+    color: var(--accent);
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .imds-step-content { color: var(--text2); font-size: 13px; line-height: 1.7; }
+  .imds-step-content strong { color: var(--text); }
+  .imds-step-content code { color: var(--accent3); }
+
+  /* ── KMS DIAGRAM ── */
+  .kms-envelope {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .kms-box {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin: 8px auto;
+    max-width: 420px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .kms-box.outer { border-color: rgba(0,212,255,0.3); color: var(--accent); }
+  .kms-box.middle { border-color: rgba(124,58,237,0.3); color: var(--accent2); }
+  .kms-box.inner { border-color: rgba(16,185,129,0.3); color: var(--accent3); }
+
+  /* ── PERMISSION BREAKDOWN ── */
+  .perm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .perm-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .perm-card .perm-action {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent3);
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+
+  .perm-card .perm-why {
+    font-size: 12px;
+    color: var(--text3);
+    line-height: 1.5;
+  }
+
+  .perm-card .perm-resource {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent2);
+    margin-top: 6px;
+    word-break: break-all;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar"><div id="progress"></div></div>
+
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="tag">Soldier 3 — Security</div>
+    <h1>IAM + Security Groups + SSM</h1>
+    <div class="sub">CampusCart DevOps Portfolio</div>
+    <div class="soldier-badge">🎖️ PHASE 3 OF 6</div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Core Concepts</div>
+    <a class="nav-item" href="#s1"><span class="num">3.1</span> What is IAM?</a>
+    <a class="nav-item" href="#s2"><span class="num">3.2</span> Users vs Roles vs Groups</a>
+    <a class="nav-item" href="#s3"><span class="num">3.3</span> Least Privilege</a>
+    <a class="nav-item" href="#s4"><span class="num">3.4</span> IAM Policy Structure</a>
+    <a class="nav-item" href="#s5"><span class="num">3.5</span> Instance Profile &amp; IMDS</a>
+    <a class="nav-item" href="#s6"><span class="num">3.6</span> Security Groups</a>
+    <a class="nav-item" href="#s7"><span class="num">3.7</span> SSM Parameter Store</a>
+    <a class="nav-item" href="#s8"><span class="num">3.8</span> AWS KMS &amp; Encryption</a>
+    <a class="nav-item" href="#s9"><span class="num">3.9</span> ECR</a>
+    <a class="nav-item" href="#s10"><span class="num">3.10</span> Shared Responsibility</a>
+
+    <div class="nav-section-label" style="margin-top:8px;">Interview Prep</div>
+    <a class="nav-item qa-link" href="#qa"><span class="num">Q&A</span> 20 Interview Questions</a>
+  </div>
+
+  <div class="sidebar-footer">
+    ap-south-1 · campuscart-vpc<br>
+    <span style="color:var(--accent3)">campuscart-sg · campuscart-ec2-role</span>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">Soldier 3 — IAM + Security Groups + SSM Parameter Store</div>
+    <h1>AWS Security<br>Deep Dive</h1>
+    <p class="hero-desc">
+      Every IAM policy, Security Group rule, and SSM parameter in CampusCart — explained at the internals level so you can answer any interview question with confidence.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="val">10</div><div class="lbl">Concepts</div></div>
+      <div class="hero-stat"><div class="val">20</div><div class="lbl">Interview Q&As</div></div>
+      <div class="hero-stat"><div class="val">18</div><div class="lbl">SSM Parameters</div></div>
+      <div class="hero-stat"><div class="val">8</div><div class="lbl">KMS-Encrypted</div></div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    CONCEPT 3.1 — WHAT IS IAM?
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="s1">
+      <div class="section-header">
+        <div class="section-num">3.1</div>
+        <div class="section-title-block">
+          <h2>What is IAM?</h2>
+          <div class="section-sub">Identity and Access Management — the authorization layer for all of AWS</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <div class="block-label">Senior Engineer Says</div>
+        <p>IAM stands for <strong>Identity and Access Management</strong>. It is AWS's answer to the fundamental security question: <span class="accent">"Who is allowed to do what to which resources?"</span></p>
+        <p>Every single API call made to AWS — whether from the console, CLI, SDK, or a service — goes through IAM. No exceptions. IAM is the gatekeeper for all of AWS.</p>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">The Four Core Questions IAM Answers</div>
+        <ul class="concept-list">
+          <li><strong>WHO</strong> is making this request? (Authentication — verifying identity via credentials)</li>
+          <li><strong>WHAT</strong> are they trying to do? (The API action — e.g., <code style="color:var(--accent)">ssm:GetParameter</code>)</li>
+          <li><strong>WHICH</strong> resource are they targeting? (The ARN — e.g., <code style="color:var(--accent)">arn:aws:ssm:ap-south-1:...:parameter/campuscart/*</code>)</li>
+          <li><strong>SHOULD</strong> they be allowed? (Authorization — checking policies attached to the identity)</li>
+        </ul>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">IAM Principals — The "Who"</div>
+        <p>A <strong>principal</strong> is any entity that can make a request to AWS. There are three types:</p>
+        <ul class="concept-list">
+          <li><strong>IAM Users</strong> — A person or application with long-term credentials (access key + secret key, or password for console)</li>
+          <li><strong>IAM Roles</strong> — An identity without long-term credentials. Assumed temporarily by EC2, Lambda, other services, or cross-account users</li>
+          <li><strong>AWS Services</strong> — EC2, Lambda, ECS etc. act as principals when they make API calls on your behalf</li>
+        </ul>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">Identity-Based vs Resource-Based Policies</div>
+        <p><strong>Identity-based policies</strong> are attached to a principal (user, role, group). They say: "This entity is allowed to do X." Our <code style="color:var(--accent)">campuscart-ssm-policy</code> attached to <code style="color:var(--accent)">campuscart-ec2-role</code> is an identity-based policy.</p>
+        <p><strong>Resource-based policies</strong> are attached to a resource (S3 bucket, SQS queue, KMS key). They say: "This resource can be accessed by these principals." Example: an S3 bucket policy that says "Allow account B to read this bucket."</p>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">CampusCart Context</div>
+        <p>In CampusCart's AWS setup, we use IAM in two places:</p>
+        <ul class="concept-list">
+          <li><strong>EC2 Role (<code style="color:var(--accent)">campuscart-ec2-role</code>)</strong>: Gives the EC2 instance permission to read SSM parameters, pull ECR images, and write CloudWatch logs. The EC2 assumes this role automatically at launch.</li>
+          <li><strong>GitHub Actions User (<code style="color:var(--accent)">campuscart-github-actions</code>)</strong>: Gives CI/CD pipeline permission to push Docker images to ECR. Uses long-term access keys stored in GitHub Secrets.</li>
+        </ul>
+      </div>
+
+      <div class="tag-row">
+        <span class="tag blue">IAM = Auth Layer for AWS</span>
+        <span class="tag green">Every API call → IAM</span>
+        <span class="tag purple">Principal + Action + Resource</span>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    CONCEPT 3.2 — USERS vs ROLES vs GROUPS
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="s2">
+      <div class="section-header">
+        <div class="section-num">3.2</div>
+        <div class="section-title-block">
+          <h2>IAM Users vs Roles vs Groups</h2>
+          <div class="section-sub">Three different identities — three different use cases</div>
+        </div>
+      </div>
+
+      <div class="compare-grid" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="compare-card" style="border-color:rgba(0,212,255,0.3);">
+          <h4 style="color:var(--accent)">👤 IAM User</h4>
+          <ul>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">Long-term credentials<br><span style="color:var(--text3);font-size:12px;">(access key + secret)</span></li>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">Represents a person<br>or external app</li>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">Keys don't rotate<br>automatically</li>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">CampusCart use:<br><code style="font-size:11px;color:var(--accent)">campuscart-github-actions</code></li>
+          </ul>
+        </div>
+        <div class="compare-card" style="border-color:rgba(16,185,129,0.3);">
+          <h4 style="color:var(--accent3)">🎭 IAM Role</h4>
+          <ul>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">Temporary credentials<br><span style="color:var(--text3);font-size:12px;">(STS issues, expires 1-12hr)</span></li>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">Assumed by services,<br>EC2, Lambda, etc.</li>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">Credentials auto-rotate<br>every hour</li>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">CampusCart use:<br><code style="font-size:11px;color:var(--accent3)">campuscart-ec2-role</code></li>
+          </ul>
+        </div>
+        <div class="compare-card" style="border-color:rgba(124,58,237,0.3);">
+          <h4 style="color:var(--accent2)">👥 IAM Group</h4>
+          <ul>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">A collection of Users</li>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">Attach policy once,<br>all members inherit it</li>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">Groups cannot assume<br>roles or be principals</li>
+            <li style="color:var(--text2);padding:4px 0 4px 16px;position:relative;">CampusCart use:<br><span style="color:var(--text3);font-size:12px;">Not used (single developer)</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <div class="block-label">Why EC2 Uses a Role — Not a User</div>
+        <p>This is the most common interview question on this topic. The answer has three parts:</p>
+        <ul class="concept-list" style="margin-top:8px;">
+          <li><strong>No credential management:</strong> An IAM User would require creating an access key, then SSH-ing it onto the EC2, storing it in <code style="color:var(--accent)">~/.aws/credentials</code>, and manually rotating it every 90 days. A Role eliminates ALL of this — credentials are auto-issued and auto-rotated by AWS.</li>
+          <li><strong>No leakage risk:</strong> With a User's access key on the EC2, if someone SSH-es in (or exploits the app), they can <code style="color:var(--accent)">cat ~/.aws/credentials</code> and extract permanent credentials. A Role's credentials expire within 1 hour — they're useless after expiry even if stolen.</li>
+          <li><strong>Instance-scoped:</strong> A Role is tied to THIS specific EC2 instance. No other machine in the world can use this role unless it's also assigned the Instance Profile. An access key is usable from anywhere on earth.</li>
+        </ul>
+      </div>
+
+      <div class="callout tip">
+        <span class="icon">💡</span>
+        <div><strong>Interview Answer Pattern:</strong> "I use IAM Roles for EC2 because roles provide automatically rotating temporary credentials via the instance metadata service, eliminating the need to manage, store, or rotate access keys on the instance. The campuscart-ec2-role is assumed by EC2 automatically, so the Django application can call SSM and ECR APIs without any hardcoded credentials."</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    CONCEPT 3.3 — PRINCIPLE OF LEAST PRIVILEGE
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="s3">
+      <div class="section-header">
+        <div class="section-num">3.3</div>
+        <div class="section-title-block">
+          <h2>Principle of Least Privilege</h2>
+          <div class="section-sub">Grant only the minimum permissions needed — nothing more</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <div class="block-label">Senior Engineer Says</div>
+        <p>The Principle of Least Privilege (PoLP) states: <span class="accent">every identity should have only the minimum permissions required to do its job — and nothing more.</span> It is the single most important security principle in cloud infrastructure.</p>
+        <p>In AWS terms: don't give an EC2 instance AdministratorAccess just because it's "easier." Define exactly what it needs, on exactly which resources, and grant only that.</p>
+      </div>
+
+      <div class="code-label">❌ BAD POLICY — Over-permissive (admin equivalent)</div>
+      <div class="code-block">
+<span class="comment"># This gives the EC2 instance GOD MODE — can do ANYTHING to ANY resource</span>
+{
+  <span class="key">"Effect"</span>: <span class="str">"Allow"</span>,
+  <span class="key">"Action"</span>: <span class="str">"*"</span>,         <span class="comment">← any AWS API call</span>
+  <span class="key">"Resource"</span>: <span class="str">"*"</span>       <span class="comment">← any AWS resource in the account</span>
+}
+<span class="comment"># If EC2 is compromised: attacker can delete your VPC, create admin IAM users,
+# exfiltrate ALL S3 data, spin up 1000 GPU instances and mine crypto,
+# delete all your backups. One breach = total account takeover.</span>
+      </div>
+
+      <div class="code-label">✅ GOOD POLICY — campuscart-ssm-policy (least privilege)</div>
+      <div class="code-block">
+<span class="comment"># This gives ONLY what CampusCart's EC2 needs</span>
+{
+  <span class="key">"Effect"</span>: <span class="str">"Allow"</span>,
+  <span class="key">"Action"</span>: [<span class="str">"ssm:GetParameter"</span>, <span class="str">"ssm:GetParameters"</span>, <span class="str">"ssm:GetParametersByPath"</span>],
+  <span class="key">"Resource"</span>: <span class="str">"arn:aws:ssm:ap-south-1:ACCOUNT:parameter/campuscart/*"</span>
+}  <span class="comment">← ONLY /campuscart/* params, ONLY read (no Put, Delete), ONLY ap-south-1</span>
+
+<span class="comment"># If EC2 is compromised: attacker can ONLY read /campuscart/* SSM parameters.
+# They CANNOT: delete resources, access other services, pivot to other regions,
+# read /other-project/* parameters, or do anything outside SSM read.
+# Blast radius is contained. The breach is bad but survivable.</span>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">CampusCart Least Privilege Breakdown</div>
+        <p>Here's why each permission in our policy is exactly scoped:</p>
+        <div class="perm-grid" style="margin-top:12px;">
+          <div class="perm-card">
+            <div class="perm-action">ssm:GetParameter / GetParameters / GetParametersByPath</div>
+            <div class="perm-why">EC2 needs to READ secrets. We grant GET but not PutParameter, DeleteParameter, or AddTagsToResource.</div>
+            <div class="perm-resource">Resource: arn:aws:ssm:ap-south-1:*:parameter/campuscart/*<br>(NOT parameter/* — scoped to our project only)</div>
+          </div>
+          <div class="perm-card">
+            <div class="perm-action">ecr:GetAuthorizationToken</div>
+            <div class="perm-why">Must authenticate to ECR before pulling images. Must be Resource: * because it's account-level.</div>
+            <div class="perm-resource">Resource: * (unavoidable — GetAuthorizationToken is not resource-specific)</div>
+          </div>
+          <div class="perm-card">
+            <div class="perm-action">ecr:BatchGetImage + GetDownloadUrlForLayer</div>
+            <div class="perm-why">EC2 needs to PULL images. We don't grant PutImage or DeleteRepository — EC2 should never push.</div>
+            <div class="perm-resource">Resource: arn:aws:ecr:ap-south-1:*:repository/campuscart-web<br>(NOT repository/* — only our repo)</div>
+          </div>
+          <div class="perm-card">
+            <div class="perm-action">logs:CreateLogGroup + CreateLogStream + PutLogEvents</div>
+            <div class="perm-why">EC2 needs to WRITE logs. We don't grant GetLogEvents or DeleteLogGroup — EC2 can't read or delete logs.</div>
+            <div class="perm-resource">Resource: arn:aws:logs:ap-south-1:*:log-group:/campuscart/*</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="icon">⚠️</span>
+        <div><strong>The "Just Use AdministratorAccess" Trap:</strong> Developers new to AWS often use the built-in AdministratorAccess managed policy because it's easier. This is a critical security mistake. In an interview, if you say "I attached AdministratorAccess to my EC2," that's an automatic red flag. Always answer: "I created a custom least-privilege policy with only the specific actions and resources the application needs."</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    CONCEPT 3.4 — IAM POLICY STRUCTURE
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="s4">
+      <div class="section-header">
+        <div class="section-num">3.4</div>
+        <div class="section-title-block">
+          <h2>IAM Policy Structure</h2>
+          <div class="section-sub">JSON anatomy — every field explained with CampusCart examples</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+<span class="comment">// Complete IAM policy structure — annotated</span>
+{
+  <span class="key">"Version"</span>: <span class="str">"2012-10-17"</span>,  <span class="comment">← ALWAYS this exact string. It's the policy language version.</span>
+                              <span class="comment">   Never "2008-10-17" (old). Never the current year.</span>
+
+  <span class="key">"Statement"</span>: [           <span class="comment">← Array of permission rules. Each rule is one Statement block.</span>
+    {
+      <span class="key">"Sid"</span>: <span class="str">"SSMReadCampusCartParameters"</span>,  <span class="comment">← Statement ID. Optional. Human-readable name.</span>
+                                            <span class="comment">   Appears in CloudTrail logs — useful for auditing.</span>
+
+      <span class="key">"Effect"</span>: <span class="str">"Allow"</span>,   <span class="comment">← "Allow" or "Deny". DENY always wins over Allow.</span>
+                            <span class="comment">   Default without any policy = implicit DENY (nothing allowed).</span>
+
+      <span class="key">"Action"</span>: [           <span class="comment">← What AWS API operations are permitted.</span>
+        <span class="str">"ssm:GetParameter"</span>,         <span class="comment">← service:ApiCallName format. Always lowercase service.</span>
+        <span class="str">"ssm:GetParameters"</span>,
+        <span class="str">"ssm:GetParametersByPath"</span>
+      ],
+
+      <span class="key">"Resource"</span>: <span class="str">"arn:aws:ssm:ap-south-1:021859068764:parameter/campuscart/*"</span>
+                            <span class="comment">↑ Which specific resources these actions apply to.</span>
+                            <span class="comment">  ARN format: arn:partition:service:region:account-id:resource-type/resource-id</span>
+                            <span class="comment">  The * at the end is a wildcard: any parameter under /campuscart/</span>
+    },
+
+    {
+      <span class="key">"Sid"</span>: <span class="str">"ECRAuthToken"</span>,
+      <span class="key">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="key">"Action"</span>: [<span class="str">"ecr:GetAuthorizationToken"</span>],
+      <span class="key">"Resource"</span>: <span class="str">"*"</span>  <span class="comment">← * required here — this action is account-level, not repo-level</span>
+    }
+  ]
+}
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">ARN Format — Broken Down</div>
+        <p>ARN stands for <strong>Amazon Resource Name</strong>. It is a globally unique identifier for any AWS resource. Format:</p>
+        <div class="code-block" style="margin-top:10px;">
+arn : aws : ssm : ap-south-1 : 021859068764 : parameter/campuscart/*
+ ↑      ↑     ↑        ↑             ↑                  ↑
+ARN  partition svc    region      account-id        resource path
+
+<span class="comment">Partition: "aws" for standard AWS, "aws-cn" for China, "aws-us-gov" for GovCloud</span>
+<span class="comment">Service:   ssm, ec2, iam, ecr, logs, s3, kms — lowercase service name</span>
+<span class="comment">Region:    ap-south-1 (Mumbai). Some services like IAM are global — region is empty.</span>
+<span class="comment">Account:   Your 12-digit AWS account ID, or * for any account.</span>
+<span class="comment">Resource:  Depends on service. For SSM: parameter/PATH. For ECR: repository/NAME.</span>
+        </div>
+      </div>
+
+      <div class="teach-block warning">
+        <div class="block-label">Effect Priority — DENY Overrides ALLOW</div>
+        <p>IAM evaluation logic (simplified for this level):</p>
+        <ul class="concept-list" style="margin-top:8px;">
+          <li><strong>Default DENY:</strong> If no policy exists that explicitly Allows an action, it is DENIED. No permissions = no access.</li>
+          <li><strong>Explicit ALLOW:</strong> A policy statement with Effect: Allow grants the permission.</li>
+          <li><strong>Explicit DENY overrides:</strong> If ANY policy (even an SCP in AWS Organizations) says Deny, the action is DENIED even if another policy says Allow. DENY always wins.</li>
+        </ul>
+        <p style="margin-top:10px;">For CampusCart: our EC2 role has no Deny statements — just carefully scoped Allows. The implicit deny covers everything not explicitly allowed.</p>
+      </div>
+
+      <div class="tag-row">
+        <span class="tag blue">Version: Always 2012-10-17</span>
+        <span class="tag green">Effect: Allow or Deny</span>
+        <span class="tag purple">DENY always overrides ALLOW</span>
+        <span class="tag yellow">Default = Implicit DENY</span>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    CONCEPT 3.5 — INSTANCE PROFILE & IMDS
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="s5">
+      <div class="section-header">
+        <div class="section-num">3.5</div>
+        <div class="section-title-block">
+          <h2>Instance Profile &amp; IMDS</h2>
+          <div class="section-sub">How EC2 gets credentials without hardcoding them — the full internal flow</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <div class="block-label">Senior Engineer Says</div>
+        <p>When a developer asks "how does your Django app know its AWS credentials?", the junior answer is "I configured them." The senior answer is: <span class="accent">the Instance Metadata Service (IMDS) delivers temporary credentials to any process running on the EC2, and the AWS SDK fetches them automatically on first use.</span></p>
+        <p>No configuration needed. No environment variables. No files. It just works — because of the Instance Profile and IMDS working together.</p>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">What is an Instance Profile?</div>
+        <p>An Instance Profile is a <strong>container object that holds exactly one IAM Role</strong>. It is the bridge between the EC2 API and IAM. AWS requires this indirection for backward compatibility — the EC2 API predates IAM Roles and was never updated to accept role ARNs directly.</p>
+        <p>In practice: you always name the Instance Profile the same as the Role. For CampusCart: <code style="color:var(--accent)">campuscart-ec2-profile</code> contains <code style="color:var(--accent)">campuscart-ec2-role</code>.</p>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">The Full IMDS Credential Flow — Step by Step</div>
+        <p>This is what happens when Soldier 4's provisioning script runs <code style="color:var(--accent)">aws ssm get-parameters-by-path</code> on the EC2:</p>
+      </div>
+
+      <div class="imds-flow">
+        <div class="imds-step">
+          <div class="imds-step-num">1</div>
+          <div class="imds-step-content">
+            <strong>EC2 launches with Instance Profile attached</strong><br>
+            <code>--iam-instance-profile Name=campuscart-ec2-profile</code><br>
+            AWS records: "this EC2 instance should have credentials for campuscart-ec2-role"
+          </div>
+        </div>
+        <div class="imds-step">
+          <div class="imds-step-num">2</div>
+          <div class="imds-step-content">
+            <strong>AWS injects the Instance Metadata Service (IMDS) endpoint</strong><br>
+            A magic IP <code>169.254.169.254</code> is routable ONLY from inside the EC2.<br>
+            This is a link-local address — you cannot reach it from outside. Ever.
+          </div>
+        </div>
+        <div class="imds-step">
+          <div class="imds-step-num">3</div>
+          <div class="imds-step-content">
+            <strong>AWS CLI / boto3 / botocore checks for credentials in order:</strong><br>
+            1. Environment variables → 2. ~/.aws/credentials file → 3. <code>IMDS endpoint</code><br>
+            Since we set none of the first two, it reaches IMDS automatically.
+          </div>
+        </div>
+        <div class="imds-step">
+          <div class="imds-step-num">4</div>
+          <div class="imds-step-content">
+            <strong>SDK calls IMDS to discover which role is attached:</strong><br>
+            <code>GET http://169.254.169.254/latest/meta-data/iam/security-credentials/</code><br>
+            Response: <code>campuscart-ec2-role</code>
+          </div>
+        </div>
+        <div class="imds-step">
+          <div class="imds-step-num">5</div>
+          <div class="imds-step-content">
+            <strong>SDK fetches the actual temporary credentials:</strong><br>
+            <code>GET http://169.254.169.254/latest/meta-data/iam/security-credentials/campuscart-ec2-role</code><br>
+            Response: <code>{ "AccessKeyId": "ASIA...", "SecretAccessKey": "...", "Token": "...", "Expiration": "2024-..." }</code>
+          </div>
+        </div>
+        <div class="imds-step">
+          <div class="imds-step-num">6</div>
+          <div class="imds-step-content">
+            <strong>SDK uses these credentials for the SSM API call</strong><br>
+            The credentials are signed into the request headers (AWS Signature V4).<br>
+            SSM service validates the signature and checks IAM: "Is campuscart-ec2-role allowed ssm:GetParametersByPath on /campuscart/*?" → YES → returns parameters.
+          </div>
+        </div>
+        <div class="imds-step">
+          <div class="imds-step-num">7</div>
+          <div class="imds-step-content">
+            <strong>Credentials expire (typically 1 hour) — SDK auto-refreshes</strong><br>
+            The SDK checks the Expiration field before each call. If expired or near expiry,<br>
+            it automatically repeats steps 4-5 to get fresh credentials. Zero manual work.
+          </div>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="icon">🔒</span>
+        <div><strong>IMDSv2 (Instance Metadata Service version 2):</strong> The newer, more secure version. Instead of a direct GET, it requires a PUT request first to get a session token, then uses that token in subsequent GET requests. This prevents Server-Side Request Forgery (SSRF) attacks where a malicious web request tricks the app into fetching the metadata endpoint. AWS recommends IMDSv2 for all new deployments.</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    CONCEPT 3.6 — SECURITY GROUPS
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="s6">
+      <div class="section-header">
+        <div class="section-num">3.6</div>
+        <div class="section-title-block">
+          <h2>Security Groups</h2>
+          <div class="section-sub">Stateful virtual firewall — and why stateful changes everything</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <div class="block-label">Senior Engineer Says</div>
+        <p>A Security Group is <strong>a stateful virtual firewall that operates at the EC2 instance level</strong>. Every EC2 instance must belong to at least one Security Group. Every packet traveling to or from the instance is evaluated against the Security Group rules.</p>
+        <p>The word <span class="accent">stateful</span> is the key to understanding Security Groups — and it comes up in every cloud networking interview.</p>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">What "Stateful" Means — Connection Tracking</div>
+        <p>A stateful firewall <strong>tracks the state of network connections</strong>. If an inbound connection is allowed, the return traffic for that connection is <strong>automatically allowed</strong> — even without an explicit outbound rule for it.</p>
+        <p>Example for CampusCart:</p>
+        <ul class="concept-list" style="margin-top:8px;">
+          <li>A browser sends HTTP request to port 80 → Security Group checks inbound rules → Port 80 allowed → Packet reaches Nginx</li>
+          <li>Nginx generates response and sends it back → Security Group sees this is part of an established connection → <strong>Automatically allows return traffic</strong> — no explicit outbound port 80 rule needed</li>
+        </ul>
+        <p style="margin-top:10px;">A <strong>stateless</strong> firewall (like AWS Network ACLs — NACLs) does NOT track connections. You must explicitly allow both inbound AND outbound for every connection type. This makes NACLs more complex to configure but more granular.</p>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">CampusCart Security Group Rules — campuscart-sg</div>
+        <table class="policy-table" style="margin-top:12px;">
+          <thead>
+            <tr>
+              <th>Direction</th>
+              <th>Protocol</th>
+              <th>Port</th>
+              <th>Source/Dest</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>INBOUND</td>
+              <td>TCP</td>
+              <td><code>80</code></td>
+              <td><code>0.0.0.0/0</code></td>
+              <td>Public web traffic → Nginx. All internet users must reach CampusCart.</td>
+            </tr>
+            <tr>
+              <td>INBOUND</td>
+              <td>TCP</td>
+              <td><code>443</code></td>
+              <td><code>0.0.0.0/0</code></td>
+              <td>Future HTTPS. Open now so Security Group doesn't need editing when SSL is added.</td>
+            </tr>
+            <tr>
+              <td>INBOUND</td>
+              <td>TCP</td>
+              <td><code>22</code></td>
+              <td><code>YOUR_IP/32</code></td>
+              <td>SSH from Bharath's machine ONLY. /32 = exactly one IP. No bots can reach this.</td>
+            </tr>
+            <tr>
+              <td>OUTBOUND</td>
+              <td>All</td>
+              <td>All</td>
+              <td><code>0.0.0.0/0</code></td>
+              <td>EC2 needs to reach ECR, SSM, CloudWatch, apt repos, Stripe API.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="teach-block warning">
+        <div class="block-label">Why Port 22 Restriction is Critical</div>
+        <p>SSH (port 22) is the most attacked port on the internet. AWS research shows that a new EC2 with port 22 open to <code style="color:var(--accent)">0.0.0.0/0</code> receives its first brute-force attempt within <strong>minutes</strong> of launch. Bots continuously scan the entire internet for open port 22.</p>
+        <p>With <code style="color:var(--accent)">YOUR_IP/32</code>: bots get TCP connection refused or timeout before the SSH daemon even responds. The attack never gets to password guessing — it's blocked at the network layer.</p>
+        <p style="margin-top:10px;"><strong>/32 explained:</strong> CIDR notation /32 means all 32 bits of the IPv4 address are fixed. 192.168.1.100/32 = exactly that one IP. /24 = first 24 bits fixed, last 8 variable = 256 addresses. /0 = no bits fixed = all 4 billion IPv4 addresses.</p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <h4>❌ Security Group vs NACL — NACL</h4>
+          <ul>
+            <li>Stateless — must allow both directions</li>
+            <li>Applies at subnet level (affects all instances in subnet)</li>
+            <li>Rules have priority numbers (evaluated in order)</li>
+            <li>Has explicit ALLOW and DENY rules</li>
+            <li>More complex, more granular</li>
+          </ul>
+        </div>
+        <div class="compare-card good">
+          <h4>✅ Security Group (what we use)</h4>
+          <ul>
+            <li>Stateful — return traffic auto-allowed</li>
+            <li>Applies at instance level (per EC2)</li>
+            <li>All rules evaluated together (no priority)</li>
+            <li>Only ALLOW rules (no DENY — implicit deny for everything else)</li>
+            <li>Simpler, most common choice</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    CONCEPT 3.7 — SSM PARAMETER STORE
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="s7">
+      <div class="section-header">
+        <div class="section-num">3.7</div>
+        <div class="section-title-block">
+          <h2>AWS SSM Parameter Store</h2>
+          <div class="section-sub">Secure, hierarchical config and secrets management — no .env files in production</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <div class="block-label">Senior Engineer Says</div>
+        <p>SSM Parameter Store is a <strong>secure, hierarchical key-value store</strong> for configuration data and secrets. It is the correct answer to "how do you manage secrets in production AWS?" — and it replaces .env files, hardcoded values, and manual SSH key transfers.</p>
+        <p>CampusCart stores <span class="accent">18 parameters</span> in Parameter Store — from Django's secret key to Stripe's webhook secret. The EC2 fetches all of them at startup in one API call. Zero secrets touch disk until runtime.</p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <h4>❌ The .env File Approach</h4>
+          <ul>
+            <li>Accidentally committed to Git → exposed forever</li>
+            <li>Must be SSH-transferred to every server</li>
+            <li>No audit trail — who read it? Who changed it?</li>
+            <li>Copy-paste errors between environments</li>
+            <li>Plain text on disk — any file read = secret leak</li>
+            <li>Manual rotation = someone remembers to do it</li>
+          </ul>
+        </div>
+        <div class="compare-card good">
+          <h4>✅ SSM Parameter Store</h4>
+          <ul>
+            <li>Never in Git — fetched from AWS at runtime</li>
+            <li>Fetched via IAM-authenticated API call</li>
+            <li>Full CloudTrail audit: who, what, when, from where</li>
+            <li>Single source of truth — update once, all instances get it</li>
+            <li>SecureString = KMS-encrypted at rest</li>
+            <li>Value rotation = one AWS CLI command</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">String vs SecureString — The Decision</div>
+        <table class="policy-table" style="margin-top:12px;">
+          <thead>
+            <tr><th>Type</th><th>Storage</th><th>Use For</th><th>CampusCart Examples</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>String</td>
+              <td>Plain text, visible in console</td>
+              <td>Non-sensitive config — hostnames, ports, feature flags, public keys</td>
+              <td><code>DEBUG=False</code>, <code>DB_HOST=db</code>, <code>REDIS_PORT=6379</code>, <code>STRIPE_PUBLISHABLE_KEY</code></td>
+            </tr>
+            <tr>
+              <td>SecureString</td>
+              <td>AES-256 encrypted via KMS</td>
+              <td>Anything causing breach if leaked — passwords, API secret keys, private keys</td>
+              <td><code>DJANGO_SECRET_KEY</code>, <code>DB_PASSWORD</code>, <code>STRIPE_SECRET_KEY</code>, <code>VAPID_PRIVATE_KEY</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">Path Hierarchy — /campuscart/* Strategy</div>
+        <p>The <code style="color:var(--accent)">/campuscart/</code> prefix is not just cosmetic. It enables three powerful capabilities:</p>
+        <ul class="concept-list" style="margin-top:8px;">
+          <li><strong>GetParametersByPath:</strong> Fetch all 18 parameters in ONE API call with <code style="color:var(--accent)">--path /campuscart/</code>. No need to list each parameter individually.</li>
+          <li><strong>IAM path scoping:</strong> Our policy grants access to <code style="color:var(--accent)">arn:aws:ssm:...:parameter/campuscart/*</code> — this is the entire path, granting and denying by hierarchy, not by listing individual parameter names.</li>
+          <li><strong>Multi-project isolation:</strong> A future project can use <code style="color:var(--accent)">/otherproject/*</code> with completely separate IAM rules. CampusCart's EC2 role cannot access those parameters.</li>
+        </ul>
+      </div>
+
+      <div class="code-block">
+<span class="comment"># Soldier 4 fetches ALL 18 parameters in ONE command:</span>
+<span class="cmd">aws ssm get-parameters-by-path</span> \
+  --path <span class="str">"/campuscart/"</span> \
+  --with-decryption \    <span class="comment">← decrypts SecureString params using KMS automatically</span>
+  --region <span class="str">"ap-south-1"</span> \
+  --query <span class="str">"Parameters[*].{Name:Name,Value:Value}"</span> \
+  --output json
+
+<span class="comment"># Output:</span>
+[
+  { <span class="str">"Name"</span>: <span class="str">"/campuscart/DJANGO_SECRET_KEY"</span>, <span class="str">"Value"</span>: <span class="str">"abc123...actualkey"</span> },
+  { <span class="str">"Name"</span>: <span class="str">"/campuscart/DB_PASSWORD"</span>,       <span class="str">"Value"</span>: <span class="str">"actualpassword"</span> },
+  <span class="comment">... 16 more parameters</span>
+]
+<span class="comment"># Soldier 4 parses this JSON and writes it to .env on the EC2</span>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    CONCEPT 3.8 — AWS KMS & ENCRYPTION
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="s8">
+      <div class="section-header">
+        <div class="section-num">3.8</div>
+        <div class="section-title-block">
+          <h2>AWS KMS &amp; Encryption</h2>
+          <div class="section-sub">How SecureString parameters are encrypted at rest — envelope encryption explained</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <div class="block-label">Senior Engineer Says</div>
+        <p>KMS stands for <strong>Key Management Service</strong>. It manages cryptographic keys and handles encryption/decryption operations. When you create a SecureString parameter in SSM, <span class="accent">KMS automatically encrypts it</span> — you never handle the encryption yourself. The keys never leave AWS's FIPS 140-2 validated hardware security modules (HSMs).</p>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">Envelope Encryption — How KMS Encrypts Your Secrets</div>
+        <p>KMS uses a technique called <strong>envelope encryption</strong>. Here's why and how:</p>
+        <p><strong>Why not encrypt directly with the KMS key?</strong> KMS keys can only encrypt small amounts of data (up to 4KB). Secrets can be larger. Also, sending large secrets to KMS for encryption would be slow and expensive. So KMS uses a two-layer approach:</p>
+      </div>
+
+      <div class="kms-envelope">
+        <div class="kms-box outer">🔑 KMS Customer Master Key (CMK) — lives in AWS HSM, never exported</div>
+        <div style="color:var(--text3);font-size:20px;margin:4px 0;">↓ generates</div>
+        <div class="kms-box middle">🗝️ Data Encryption Key (DEK) — generated per parameter, used once</div>
+        <div style="color:var(--text3);font-size:20px;margin:4px 0;">↓ encrypts</div>
+        <div class="kms-box inner">🔒 Encrypted parameter value (ciphertext) + Encrypted DEK stored together in SSM</div>
+        <div style="color:var(--text2);font-size:12px;margin-top:16px;font-family:var(--mono);">
+          To decrypt: AWS calls KMS to decrypt the DEK → DEK decrypts the ciphertext → plaintext returned over TLS
+        </div>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">Who Can Decrypt?</div>
+        <p>Decryption requires BOTH:</p>
+        <ul class="concept-list" style="margin-top:8px;">
+          <li><strong>SSM permission:</strong> <code style="color:var(--accent)">ssm:GetParameter</code> with <code style="color:var(--accent)">--with-decryption</code> flag</li>
+          <li><strong>KMS permission:</strong> <code style="color:var(--accent)">kms:Decrypt</code> on the key used to encrypt (our policy grants this implicitly via SSM managed key)</li>
+        </ul>
+        <p style="margin-top:10px;">Our <code style="color:var(--accent)">campuscart-ec2-role</code> has both permissions. The GitHub Actions user does NOT — it can only push images. Even if GitHub Actions were compromised, it could not read the database password.</p>
+      </div>
+
+      <div class="callout tip">
+        <span class="icon">💡</span>
+        <div><strong>Default vs Customer Managed Key:</strong> SSM SecureString uses the <code>aws/ssm</code> AWS managed key by default — no cost, no management. For maximum control (custom rotation schedule, cross-account access, CloudTrail key usage logs), you'd create a Customer Managed Key (CMK). For CampusCart at this scale, the default managed key is correct.</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    CONCEPT 3.9 — ECR
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="s9">
+      <div class="section-header">
+        <div class="section-num">3.9</div>
+        <div class="section-title-block">
+          <h2>ECR — Elastic Container Registry</h2>
+          <div class="section-sub">Private Docker image registry — why ECR beats Docker Hub for production AWS</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <div class="block-label">Senior Engineer Says</div>
+        <p>ECR is AWS's fully managed private Docker image registry. It is the AWS-native alternative to Docker Hub. For production deployments on EC2, ECR is the correct choice — same network, IAM authentication, no rate limits, and automatic vulnerability scanning.</p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <h4>❌ Docker Hub (Public Registry)</h4>
+          <ul>
+            <li>Images public by default (private costs money)</li>
+            <li>Rate limited: 100 pulls/6hr on free tier</li>
+            <li>Separate auth system (not IAM)</li>
+            <li>Data transfer costs from AWS to Docker Hub</li>
+            <li>No native AWS security scanning</li>
+            <li>Credentials stored separately from AWS</li>
+          </ul>
+        </div>
+        <div class="compare-card good">
+          <h4>✅ AWS ECR (what CampusCart uses)</h4>
+          <ul>
+            <li>Private by default — IAM controls all access</li>
+            <li>No pull rate limits for ECR</li>
+            <li>Same AWS credentials (campuscart-ec2-role) — no extra login</li>
+            <li>Same region as EC2 — free data transfer, fast pulls</li>
+            <li>Automatic CVE scanning on every push</li>
+            <li>Integrated with CloudTrail for audit logs</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">Image Tag Immutability — Why It Matters</div>
+        <p>With tag immutability set to <code style="color:var(--accent)">IMMUTABLE</code> on the <code style="color:var(--accent)">campuscart-web</code> repository:</p>
+        <ul class="concept-list" style="margin-top:8px;">
+          <li><strong>Once pushed:</strong> An image tagged <code style="color:var(--accent)">abc1234</code> (git commit SHA) can NEVER be replaced by a different image with the same tag. The tag is permanent.</li>
+          <li><strong>Forces unique tags:</strong> Soldier 5's GitHub Actions pipeline tags every image with the git commit SHA. Each deployment is traceable to an exact code state.</li>
+          <li><strong>Prevents accidents:</strong> A misconfigured CI pipeline cannot accidentally overwrite <code style="color:var(--accent)">latest</code> with a broken build. The old <code style="color:var(--accent)">latest</code> remains intact.</li>
+          <li><strong>Security:</strong> An attacker who gains push access cannot silently swap a known-good image with a malicious one under the same tag.</li>
+        </ul>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">Image Scanning on Push</div>
+        <p>ECR integrates with Amazon Inspector to scan every Docker image layer for CVEs (Common Vulnerabilities and Exposures) from databases like NVD, RHSA, and ALAS immediately after a push.</p>
+        <p>For CampusCart, this means: if Django releases a patch for a critical security vulnerability, ECR will flag the old image as having <code style="color:var(--accent5)">HIGH</code> severity findings. You'll see this in the ECR console and can decide whether to rebuild and deploy.</p>
+      </div>
+
+      <div class="code-block">
+<span class="comment"># ECR URI format for campuscart:</span>
+<span class="str">021859068764.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web</span>
+
+<span class="comment"># GitHub Actions pushes with git commit SHA tag (Soldier 5):</span>
+<span class="cmd">docker tag</span> campuscart-web:latest \
+  <span class="str">021859068764.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web:abc1234</span>
+
+<span class="cmd">docker push</span> <span class="str">021859068764.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web:abc1234</span>
+
+<span class="comment"># EC2 pulls the specific tagged image (Soldier 4):</span>
+<span class="cmd">docker pull</span> <span class="str">021859068764.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web:abc1234</span>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    CONCEPT 3.10 — SHARED RESPONSIBILITY
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="s10">
+      <div class="section-header">
+        <div class="section-num">3.10</div>
+        <div class="section-title-block">
+          <h2>AWS Shared Responsibility — Security Layer</h2>
+          <div class="section-sub">IAM, Security Groups, and secrets — your responsibility, not AWS's</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <div class="block-label">Senior Engineer Says</div>
+        <p>The Shared Responsibility Model says: <span class="accent">AWS secures the cloud infrastructure. You secure everything you put IN the cloud.</span> For security specifically: AWS handles physical security, hypervisor isolation, and managed-service encryption. You handle IAM policies, Security Group rules, and secrets management.</p>
+      </div>
+
+      <div class="teach-block">
+        <div class="block-label">CampusCart Security Responsibilities</div>
+        <table class="policy-table" style="margin-top:12px;">
+          <thead>
+            <tr><th>Layer</th><th>AWS Handles</th><th>You Handle</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>IAM</td>
+              <td>IAM service availability, policy evaluation engine, credential issuance</td>
+              <td>Writing least-privilege policies, not leaking access keys, MFA on root</td>
+            </tr>
+            <tr>
+              <td>Network</td>
+              <td>Underlying network fabric, VPC isolation between accounts</td>
+              <td>Security Group rules, NACL rules, VPC route tables, what's publicly exposed</td>
+            </tr>
+            <tr>
+              <td>Secrets</td>
+              <td>KMS key security, HSM hardware, SSM service encryption</td>
+              <td>Choosing SecureString for sensitive params, IAM scoping, not putting secrets in code</td>
+            </tr>
+            <tr>
+              <td>Container Images</td>
+              <td>ECR infrastructure, S3 storage for layers</td>
+              <td>Image scanning results, base image choices, not running as root in containers</td>
+            </tr>
+            <tr>
+              <td>EC2 Instance</td>
+              <td>Hypervisor isolation, physical host security</td>
+              <td>OS patching, SSH key security, Security Group config, what software runs</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout tip">
+        <span class="icon">✅</span>
+        <div><strong>Interview Answer:</strong> "For CampusCart, I'm responsible for the application layer of security: I wrote a least-privilege IAM policy granting only SSM read on /campuscart/* and ECR pull on campuscart-web. I restricted SSH access to my IP only in the Security Group. I stored all 18 application secrets in SSM Parameter Store with SecureString encryption for sensitive values — eliminating all hardcoded credentials. AWS handles the KMS key hardware, the IAM policy evaluation engine, and the physical security of the infrastructure."</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="teach-block highlight" style="text-align:center;">
+        <div class="block-label">All 10 Concepts Complete</div>
+        <p style="font-size:16px;"><strong>You now understand AWS security at the internals level.</strong></p>
+        <p style="margin-top:8px;">Next: scroll down for all 20 interview questions answered from CampusCart's exact context.</p>
+        <div class="tag-row" style="justify-content:center;margin-top:16px;">
+          <span class="tag blue">IAM ✓</span>
+          <span class="tag blue">Roles vs Users ✓</span>
+          <span class="tag blue">Least Privilege ✓</span>
+          <span class="tag blue">Policy JSON ✓</span>
+          <span class="tag blue">IMDS ✓</span>
+          <span class="tag blue">Security Groups ✓</span>
+          <span class="tag blue">SSM ✓</span>
+          <span class="tag blue">KMS ✓</span>
+          <span class="tag blue">ECR ✓</span>
+          <span class="tag blue">Shared Responsibility ✓</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+    INTERVIEW Q&A — 20 QUESTIONS
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="qa-section" id="qa">
+      <div class="qa-section-header">
+        <div class="qa-eyebrow">Interview Preparation</div>
+        <h2>20 Security Questions — Answered from CampusCart's Context</h2>
+        <p style="color:var(--text2);margin-top:12px;font-size:14px;">Click any question to reveal the complete answer. Every answer references CampusCart's specific resource names, ARNs, and design decisions.</p>
+      </div>
+
+      <div class="qa-grid">
+
+        <!-- Q1 -->
+        <div class="qa-card" id="q1">
+          <div class="qa-question" onclick="toggleQA('q1')">
+            <span class="qa-q-num">Q 01</span>
+            <span class="qa-q-text">What is IAM and why is it important?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>IAM stands for Identity and Access Management. It is AWS's authorization and authentication layer that controls <strong>who can do what to which resources</strong> across the entire AWS platform. Every single API call — whether from the console, CLI, SDK, or an AWS service — is evaluated by IAM before it is executed.</p>
+            <p>IAM is critical because without it, anyone with AWS credentials could do anything to your infrastructure. In CampusCart's setup, IAM ensures that the EC2 instance can read SSM parameters and pull ECR images — but cannot delete EC2 instances, access other projects' data, or make changes to IAM itself. The <code>campuscart-ec2-role</code> is scoped to exactly what the application needs.</p>
+            <p>IAM also enables the audit trail: CloudTrail logs every API call with who called it, what they called, and when — making security incidents investigatable.</p>
+          </div></div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="qa-card" id="q2">
+          <div class="qa-question" onclick="toggleQA('q2')">
+            <span class="qa-q-num">Q 02</span>
+            <span class="qa-q-text">What is the difference between an IAM user, role, and group?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p><strong>IAM User</strong>: A persistent identity representing a person or application. Has long-term credentials — either a password for console access or an access key + secret key for programmatic access. Credentials do not expire automatically. In CampusCart, I created one IAM User: <code>campuscart-github-actions</code> for the CI/CD pipeline. It uses access keys stored in GitHub Secrets to push Docker images to ECR.</p>
+            <p><strong>IAM Role</strong>: A temporary identity without long-term credentials. Any entity that has permission can "assume" the role, receiving temporary credentials from AWS STS that expire after 1-12 hours. In CampusCart, <code>campuscart-ec2-role</code> is assumed by the EC2 instance automatically. The instance gets auto-rotating temporary credentials via the instance metadata service.</p>
+            <p><strong>IAM Group</strong>: A collection of IAM Users for easier management. Attach a policy to the group and all members inherit it. Not used in CampusCart since there's only one developer account.</p>
+          </div></div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="qa-card" id="q3">
+          <div class="qa-question" onclick="toggleQA('q3')">
+            <span class="qa-q-num">Q 03</span>
+            <span class="qa-q-text">Why does EC2 use an IAM role instead of an IAM user?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>Three reasons why <code>campuscart-ec2-role</code> is a Role and not a User:</p>
+            <ul>
+              <li><strong>No credential management:</strong> An IAM User would require generating an access key, SSH-ing it onto the EC2, storing it in <code>~/.aws/credentials</code>, and manually rotating it periodically. The Role eliminates all of this — the EC2 gets temporary credentials automatically via the instance metadata service at <code>169.254.169.254</code>.</li>
+              <li><strong>Auto-rotating credentials:</strong> Role credentials expire every 1 hour. If an attacker extracts them from memory, they're useless after expiry. A User's access key is permanent until manually deleted.</li>
+              <li><strong>No static secrets on disk:</strong> With a Role, there are no files on the EC2 containing AWS credentials. Nothing to accidentally commit, copy, or leak. The credentials live only in memory during the SDK call.</li>
+            </ul>
+            <p>This is considered a security best practice for any EC2 workload. The approach of putting access keys on EC2 instances is specifically called out by AWS as an anti-pattern.</p>
+          </div></div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="qa-card" id="q4">
+          <div class="qa-question" onclick="toggleQA('q4')">
+            <span class="qa-q-num">Q 04</span>
+            <span class="qa-q-text">What is the principle of least privilege? Give an example from your project.</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>The principle of least privilege means granting only the minimum permissions required to perform a task — nothing more. In AWS, this means carefully scoping IAM policies to specific actions and specific resources.</p>
+            <p>In CampusCart, the <code>campuscart-ssm-policy</code> is my concrete example. Instead of attaching <code>AdministratorAccess</code> or even <code>AmazonSSMFullAccess</code>, I created a custom policy with exactly three SSM actions: <code>GetParameter</code>, <code>GetParameters</code>, and <code>GetParametersByPath</code>. And the resource is scoped to <code>arn:aws:ssm:ap-south-1:ACCOUNT:parameter/campuscart/*</code> — only parameters in our project's path, only in Mumbai region.</p>
+            <p>The practical security impact: if the EC2 instance were compromised, an attacker with <code>campuscart-ec2-role</code> could only read our SSM parameters. They could not create new parameters, delete existing ones, access other projects' parameters, touch EC2 or RDS resources, modify IAM, or do anything outside this narrow scope. The blast radius of a compromise is contained.</p>
+          </div></div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="qa-card" id="q5">
+          <div class="qa-question" onclick="toggleQA('q5')">
+            <span class="qa-q-num">Q 05</span>
+            <span class="qa-q-text">What is an instance profile and why is it needed?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>An instance profile is a container object that holds exactly one IAM Role. It is required because the EC2 API predates IAM Roles and only accepts instance profiles — not role ARNs — as a parameter when launching instances.</p>
+            <p>In practice, you always create an instance profile with the same name as the role and add the role to it. For CampusCart: <code>campuscart-ec2-profile</code> contains <code>campuscart-ec2-role</code>. When running <code>ec2-launch.sh</code>, the <code>--iam-instance-profile Name=campuscart-ec2-profile</code> flag associates this profile (and therefore the role's permissions) with the EC2 instance.</p>
+            <p>Without an instance profile, the EC2 instance would have no IAM identity. Any attempt by the application to call AWS APIs (reading SSM params, pulling ECR images) would return <code>NoCredentialsError</code>.</p>
+          </div></div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="qa-card" id="q6">
+          <div class="qa-question" onclick="toggleQA('q6')">
+            <span class="qa-q-num">Q 06</span>
+            <span class="qa-q-text">What is the instance metadata service (IMDS)?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>The Instance Metadata Service (IMDS) is an HTTP endpoint at <code>169.254.169.254</code> that is accessible ONLY from within an EC2 instance. It provides information about the instance itself — including temporary AWS credentials for the attached IAM role.</p>
+            <p>The IP <code>169.254.169.254</code> is a link-local address. It is not routable on the internet and cannot be accessed from outside the EC2. This is a security property — no external party can reach IMDS.</p>
+            <p>For CampusCart, any time the Django application (via boto3), the AWS CLI in a provisioning script, or Docker pull command needs AWS credentials, the AWS SDK automatically queries IMDS at <code>http://169.254.169.254/latest/meta-data/iam/security-credentials/campuscart-ec2-role</code> and receives temporary AccessKeyId, SecretAccessKey, and SessionToken. These credentials have the permissions of <code>campuscart-ec2-role</code> — exactly the SSM read, ECR pull, and CloudWatch write permissions we defined.</p>
+          </div></div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="qa-card" id="q7">
+          <div class="qa-question" onclick="toggleQA('q7')">
+            <span class="qa-q-num">Q 07</span>
+            <span class="qa-q-text">How does EC2 get AWS credentials without hardcoding them?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>Through the Instance Profile and Instance Metadata Service chain: When the EC2 launches with <code>campuscart-ec2-profile</code> attached, AWS knows this instance should have credentials for <code>campuscart-ec2-role</code>.</p>
+            <p>When any AWS SDK call is made on the EC2, the SDK's credential provider chain first checks environment variables, then <code>~/.aws/credentials</code>. Since we set neither, it falls through to IMDS. The SDK calls <code>http://169.254.169.254/latest/meta-data/iam/security-credentials/campuscart-ec2-role</code> and receives temporary credentials — AccessKeyId, SecretAccessKey, and SessionToken — that expire in about 1 hour.</p>
+            <p>The SDK caches these credentials and automatically refreshes them before expiry. From the application developer's perspective: zero configuration needed. Boto3 in Django just works. The AWS CLI just works. Docker ECR login just works. All because of the Instance Profile chain.</p>
+          </div></div>
+        </div>
+
+        <!-- Q8 -->
+        <div class="qa-card" id="q8">
+          <div class="qa-question" onclick="toggleQA('q8')">
+            <span class="qa-q-num">Q 08</span>
+            <span class="qa-q-text">What is a Security Group? How is it different from a NACL?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>A Security Group is a <strong>stateful virtual firewall operating at the EC2 instance level</strong>. Every packet to/from the instance is evaluated against the Security Group's inbound and outbound rules. For CampusCart, <code>campuscart-sg</code> allows inbound TCP 80 and 443 from anywhere, and TCP 22 from my IP only.</p>
+            <p>The key differences from Network ACLs (NACLs):</p>
+            <ul>
+              <li><strong>Stateful vs Stateless:</strong> Security Groups track connection state — if inbound port 80 is allowed, the HTTP response automatically flows back out without needing an outbound rule. NACLs are stateless — you must explicitly allow both inbound AND outbound for each connection type.</li>
+              <li><strong>Scope:</strong> Security Groups apply per instance. NACLs apply at the subnet level and affect all instances in the subnet.</li>
+              <li><strong>Rules:</strong> Security Groups only have ALLOW rules (everything else is implicitly denied). NACLs have numbered ALLOW and DENY rules evaluated in order.</li>
+              <li><strong>Typical use:</strong> Security Groups for instance-level protection (what we use). NACLs as a subnet-level backup layer or for explicit DENY rules (blocking a specific IP from an entire subnet).</li>
+            </ul>
+          </div></div>
+        </div>
+
+        <!-- Q9 -->
+        <div class="qa-card" id="q9">
+          <div class="qa-question" onclick="toggleQA('q9')">
+            <span class="qa-q-num">Q 09</span>
+            <span class="qa-q-text">What does "stateful" mean in the context of Security Groups?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>Stateful means the firewall tracks the state of network connections. When an inbound connection is allowed, the corresponding return traffic for that connection is <strong>automatically permitted</strong> — without needing an explicit outbound rule.</p>
+            <p>Concrete CampusCart example: A user's browser opens a TCP connection to the EC2 on port 80. The Security Group's inbound rule allows this. Nginx responds with the HTML page — this is outbound traffic on an ephemeral port. Even though our outbound rule simply says "all traffic allowed," even if we restricted outbound, the Security Group would still allow this specific response because it tracks that this outbound packet is part of an already-established inbound connection.</p>
+            <p>For CampusCart's EC2, this means we only need to think about what comes IN (which port, from where). The responses automatically follow. This is why Security Groups are much easier to manage than NACLs for most use cases.</p>
+          </div></div>
+        </div>
+
+        <!-- Q10 -->
+        <div class="qa-card" id="q10">
+          <div class="qa-question" onclick="toggleQA('q10')">
+            <span class="qa-q-num">Q 10</span>
+            <span class="qa-q-text">Why did you restrict SSH to only your IP? What is /32?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>SSH (port 22) is the most attacked port on the internet. Any EC2 with port 22 open to <code>0.0.0.0/0</code> receives automated brute-force attempts within minutes of launch — bots continuously scan the entire IPv4 address space for open SSH ports.</p>
+            <p>By restricting to <code>MY_IP/32</code>, only my machine's exact public IP can even initiate a TCP connection to port 22. All bot traffic is silently dropped at the Security Group level before it reaches the SSH daemon. The daemon never sees illegitimate connection attempts — they're blocked at the network layer.</p>
+            <p><strong>/32 in CIDR notation</strong> means all 32 bits of the IPv4 address are fixed. In IPv4, an address is 32 bits. A /32 mask means every bit must match — so only that exact single IP address matches. Compare: /24 fixes the first 24 bits (allows 256 addresses), /16 fixes first 16 bits (allows 65,536), /0 fixes nothing (allows all 4+ billion IPv4 addresses).</p>
+            <p>In <code>security-setup.sh</code>, I auto-detect the current IP with <code>curl -s https://checkip.amazonaws.com</code> so Soldier 6 doesn't need to manually replace a placeholder at execution time.</p>
+          </div></div>
+        </div>
+
+        <!-- Q11 -->
+        <div class="qa-card" id="q11">
+          <div class="qa-question" onclick="toggleQA('q11')">
+            <span class="qa-q-num">Q 11</span>
+            <span class="qa-q-text">What is AWS SSM Parameter Store?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>AWS Systems Manager Parameter Store is a <strong>secure, hierarchical key-value store</strong> for configuration data and secrets. It replaces .env files and hardcoded values in production infrastructure.</p>
+            <p>For CampusCart, I store 18 application parameters under the <code>/campuscart/</code> path hierarchy. The provisioning script (Soldier 4) fetches all 18 in a single API call using <code>GetParametersByPath</code>, writes them to a <code>.env</code> file at runtime, and Docker Compose reads that file. No secrets are committed to Git. No secrets are SSH-transferred. Everything is fetched at runtime from SSM via an IAM-authenticated API call.</p>
+            <p>The path hierarchy also enables granular IAM scoping: <code>campuscart-ec2-role</code> can only access <code>/campuscart/*</code> — not any other project's parameters or AWS-managed parameters.</p>
+          </div></div>
+        </div>
+
+        <!-- Q12 -->
+        <div class="qa-card" id="q12">
+          <div class="qa-question" onclick="toggleQA('q12')">
+            <span class="qa-q-num">Q 12</span>
+            <span class="qa-q-text">What is the difference between String and SecureString in SSM?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p><strong>String</strong>: Stored as plain text. Visible in the AWS console, CLI output without flags, and CloudTrail logs. Appropriate for non-sensitive configuration: hostnames, port numbers, feature flags, public keys.</p>
+            <p><strong>SecureString</strong>: Encrypted at rest using AWS KMS (Key Management Service). The value appears as ciphertext everywhere except when explicitly decrypted with <code>--with-decryption</code> by an entity with both SSM read and KMS decrypt permissions. Appropriate for anything causing a security breach if leaked.</p>
+            <p>In CampusCart, I use SecureString for 8 parameters: <code>DJANGO_SECRET_KEY</code>, <code>DB_PASSWORD</code>, <code>EMAIL_HOST_PASSWORD</code>, <code>STRIPE_SECRET_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code>, <code>VAPID_PRIVATE_KEY</code>, and the KMS-encrypted values can only be decrypted by <code>campuscart-ec2-role</code>. Even if someone gained read-only access to SSM without the KMS permission, they'd see ciphertext — useless without the decryption key.</p>
+          </div></div>
+        </div>
+
+        <!-- Q13 -->
+        <div class="qa-card" id="q13">
+          <div class="qa-question" onclick="toggleQA('q13')">
+            <span class="qa-q-num">Q 13</span>
+            <span class="qa-q-text">How many credentials did you store in SSM and what are they?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>I stored <strong>18 parameters</strong> in SSM Parameter Store under the <code>/campuscart/</code> path. They cover five categories:</p>
+            <ul>
+              <li><strong>Django core (3):</strong> <code>DJANGO_SECRET_KEY</code> (SecureString), <code>DEBUG</code>, <code>ALLOWED_HOSTS</code></li>
+              <li><strong>PostgreSQL (5):</strong> <code>DB_NAME</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code> (SecureString), <code>DB_HOST</code> (="db", the Docker service name), <code>DB_PORT</code></li>
+              <li><strong>Redis (2):</strong> <code>REDIS_HOST</code> (="redis", Docker service name), <code>REDIS_PORT</code></li>
+              <li><strong>Email/Gmail (2):</strong> <code>EMAIL_HOST_USER</code>, <code>EMAIL_HOST_PASSWORD</code> (SecureString)</li>
+              <li><strong>Stripe payments (3):</strong> <code>STRIPE_SECRET_KEY</code> (SecureString), <code>STRIPE_PUBLISHABLE_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code> (SecureString)</li>
+              <li><strong>VAPID push notifications (3):</strong> <code>VAPID_PUBLIC_KEY</code>, <code>VAPID_PRIVATE_KEY</code> (SecureString), <code>VAPID_EMAIL</code></li>
+            </ul>
+            <p>Of the 18 parameters, 8 are SecureString (KMS-encrypted) and 10 are String. This exceeds the resume claim of "5+ credentials" — 18 is production-level secret management at scale.</p>
+          </div></div>
+        </div>
+
+        <!-- Q14 -->
+        <div class="qa-card" id="q14">
+          <div class="qa-question" onclick="toggleQA('q14')">
+            <span class="qa-q-num">Q 14</span>
+            <span class="qa-q-text">Why is SSM Parameter Store better than a .env file in production?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>Four critical advantages for CampusCart:</p>
+            <ul>
+              <li><strong>No Git exposure risk:</strong> The .env file containing Stripe keys and database passwords cannot be accidentally committed to GitHub because it doesn't exist until runtime. SSM parameters are fetched at provisioning time and written to a temporary .env file that is never in the Git repository.</li>
+              <li><strong>IAM-controlled access:</strong> Only principals with <code>ssm:GetParameter</code> permission on <code>/campuscart/*</code> can read these values. That's currently only <code>campuscart-ec2-role</code>. A .env file on disk can be read by any process running as the same user.</li>
+              <li><strong>Audit trail:</strong> Every parameter read is logged in CloudTrail: which principal read which parameter, at what time, from which IP. A .env file has no audit trail whatsoever.</li>
+              <li><strong>Centralized rotation:</strong> To rotate the database password, I update one SSM parameter. On next instance restart, it picks up the new value. With .env files, I'd have to SSH into every server, edit the file, and restart services manually.</li>
+            </ul>
+          </div></div>
+        </div>
+
+        <!-- Q15 -->
+        <div class="qa-card" id="q15">
+          <div class="qa-question" onclick="toggleQA('q15')">
+            <span class="qa-q-num">Q 15</span>
+            <span class="qa-q-text">What is AWS KMS and how does it protect your SSM SecureString parameters?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>AWS Key Management Service (KMS) is a managed service for creating and controlling cryptographic keys. It uses FIPS 140-2 validated hardware security modules (HSMs) — physical devices that store master keys and never export them.</p>
+            <p>For CampusCart's SSM SecureString parameters, KMS uses envelope encryption: when I store <code>STRIPE_SECRET_KEY</code> as SecureString, SSM asks KMS to generate a Data Encryption Key (DEK). SSM uses the DEK to encrypt the secret value with AES-256. Then KMS encrypts the DEK itself with the CMK. Both the ciphertext and the encrypted DEK are stored together in SSM. The plaintext DEK never persists anywhere.</p>
+            <p>To decrypt: SSM calls KMS to decrypt the DEK (using the CMK in the HSM), then uses the plaintext DEK to decrypt the parameter value, then returns the plaintext over TLS. This happens transparently when Soldier 4 runs the provisioning script with <code>--with-decryption</code>.</p>
+            <p>The security guarantee: even if someone gained direct database access to SSM's storage, they would only see ciphertext. Without access to the KMS CMK (which requires IAM permission AND is in an HSM), the data is useless.</p>
+          </div></div>
+        </div>
+
+        <!-- Q16 -->
+        <div class="qa-card" id="q16">
+          <div class="qa-question" onclick="toggleQA('q16')">
+            <span class="qa-q-num">Q 16</span>
+            <span class="qa-q-text">What is ECR and why use it instead of Docker Hub?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>ECR (Elastic Container Registry) is AWS's fully managed private Docker image registry. For CampusCart, I created the <code>campuscart-web</code> repository at <code>021859068764.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web</code>.</p>
+            <p>Why ECR over Docker Hub for this project:</p>
+            <ul>
+              <li><strong>Same network:</strong> The EC2 in ap-south-1 pulls images from ECR ap-south-1 — same AWS region, same network backbone. This is fast and costs nothing in data transfer.</li>
+              <li><strong>IAM authentication:</strong> The EC2's <code>campuscart-ec2-role</code> already has pull permissions via the IAM policy. No separate Docker Hub credentials needed. GitHub Actions' IAM user has push permissions. Access is controlled entirely through IAM.</li>
+              <li><strong>No rate limits:</strong> Docker Hub free tier limits pulls to 100 per 6 hours. In a CI/CD pipeline that deploys frequently, this becomes a bottleneck. ECR has no such limits.</li>
+              <li><strong>Vulnerability scanning:</strong> ECR automatically scans every image push for CVEs and reports findings by severity — integrated natively, no extra tooling.</li>
+            </ul>
+          </div></div>
+        </div>
+
+        <!-- Q17 -->
+        <div class="qa-card" id="q17">
+          <div class="qa-question" onclick="toggleQA('q17')">
+            <span class="qa-q-num">Q 17</span>
+            <span class="qa-q-text">What is image tag immutability and why is it a security best practice?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>Image tag immutability means that once an image is pushed with a specific tag, that tag cannot be overwritten by a different image. I set the <code>campuscart-web</code> ECR repository to <code>IMMUTABLE</code>.</p>
+            <p>Without immutability, this attack is possible: someone pushes a malicious image as <code>latest</code>, overwriting the known-good production image. On the next deployment, EC2 pulls <code>latest</code> — which is now the malicious image — and CampusCart is compromised. With immutability, this is impossible. Once <code>latest</code> is set, it cannot be changed. Any new image requires a new tag.</p>
+            <p>For CampusCart's CI/CD pipeline (Soldier 5), GitHub Actions tags every image with the Git commit SHA — e.g., <code>abc1234</code>. This means every deployed image is traceable to an exact commit. If there's a production incident, I can check which commit SHA is deployed, review that exact code, and roll back to a previous known-good SHA. Immutability makes this rollback reliable — the previous tag will always point to the exact same image it did when it was first pushed.</p>
+          </div></div>
+        </div>
+
+        <!-- Q18 -->
+        <div class="qa-card" id="q18">
+          <div class="qa-question" onclick="toggleQA('q18')">
+            <span class="qa-q-num">Q 18</span>
+            <span class="qa-q-text">What permissions does your GitHub Actions IAM user have and why only those?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>The <code>campuscart-github-actions</code> IAM User has exactly seven ECR permissions, scoped to the <code>campuscart-web</code> repository only:</p>
+            <ul>
+              <li><code>ecr:GetAuthorizationToken</code> on * — required to get a Docker login token for ECR (account-level, can't scope to a repo)</li>
+              <li><code>ecr:BatchCheckLayerAvailability</code> — check which image layers already exist (avoids re-uploading identical layers)</li>
+              <li><code>ecr:GetDownloadUrlForLayer</code> — needed for layer deduplication during push</li>
+              <li><code>ecr:BatchGetImage</code> — retrieve image manifest</li>
+              <li><code>ecr:PutImage</code> — actually push the image manifest</li>
+              <li><code>ecr:InitiateLayerUpload</code>, <code>UploadLayerPart</code>, <code>CompleteLayerUpload</code> — multipart upload for image layers</li>
+            </ul>
+            <p>What it deliberately <strong>cannot</strong> do: read SSM parameters (GitHub Actions runs in GitHub's cloud — secrets stay in AWS), create or delete EC2 instances, modify IAM policies, delete ECR images, or access any service outside ECR. Even if the GitHub repository were compromised and CI/CD credentials were stolen, an attacker could only push images to our ECR — a contained blast radius.</p>
+          </div></div>
+        </div>
+
+        <!-- Q19 -->
+        <div class="qa-card" id="q19">
+          <div class="qa-question" onclick="toggleQA('q19')">
+            <span class="qa-q-num">Q 19</span>
+            <span class="qa-q-text">If your EC2 was compromised, what damage could an attacker do with your IAM role?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>With <code>campuscart-ec2-role</code>, an attacker on the compromised EC2 could:</p>
+            <ul>
+              <li>Read all 18 SSM parameters under <code>/campuscart/*</code> including SecureString values — so they could get the database password, Stripe keys, etc.</li>
+              <li>Pull Docker images from the <code>campuscart-web</code> ECR repository</li>
+              <li>Write log events to CloudWatch log groups under <code>/campuscart/*</code></li>
+            </ul>
+            <p>What they <strong>cannot</strong> do: delete or modify infrastructure, access SSM parameters outside <code>/campuscart/*</code>, push images to ECR, access S3, RDS, Route53, or any other service, create new IAM users or roles, pivot to other AWS accounts, or take actions in any other region beyond ap-south-1.</p>
+            <p>This is least privilege working as intended. The breach is serious (Stripe keys and DB password are exposed), but it's contained. The attacker cannot destroy infrastructure, access other customers' data (if multi-tenant), or perform privilege escalation within AWS. Compare this to an <code>AdministratorAccess</code> role — that would be total account compromise.</p>
+          </div></div>
+        </div>
+
+        <!-- Q20 -->
+        <div class="qa-card" id="q20">
+          <div class="qa-question" onclick="toggleQA('q20')">
+            <span class="qa-q-num">Q 20</span>
+            <span class="qa-q-text">What is the difference between authentication and authorization in AWS?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p><strong>Authentication</strong>: Verifying that a request comes from who it claims to be. In AWS, this is done via AWS Signature V4 — every API request is cryptographically signed with the caller's credentials (access key or temporary session token). AWS verifies the signature to confirm the identity is legitimate. For CampusCart's EC2, the temporary credentials from IMDS are used to sign API calls — AWS verifies these signatures against the STS-issued token.</p>
+            <p><strong>Authorization</strong>: Determining whether the authenticated identity is <em>allowed</em> to perform the requested action. This is IAM's job. After confirming the request is genuinely from <code>campuscart-ec2-role</code>, IAM checks: does this role have permission to call <code>ssm:GetParameter</code> on <code>arn:aws:ssm:ap-south-1:...:parameter/campuscart/DB_PASSWORD</code>? It evaluates all attached policies and returns Allow or Deny.</p>
+            <p>In CampusCart's flow: the EC2 signs a request with IMDS-provided credentials (authentication) → AWS verifies the signature and confirms this is <code>campuscart-ec2-role</code> → IAM evaluates <code>campuscart-ssm-policy</code> and finds <code>ssm:GetParametersByPath</code> allowed on <code>/campuscart/*</code> → request proceeds (authorization). Both must succeed for the API call to work.</p>
+          </div></div>
+        </div>
+
+      </div><!-- /qa-grid -->
+
+      <div style="margin-top:40px;text-align:center;">
+        <div class="tag-row" style="justify-content:center;">
+          <span class="tag blue">IAM ✓</span>
+          <span class="tag blue">Roles ✓</span>
+          <span class="tag blue">Least Privilege ✓</span>
+          <span class="tag blue">Instance Profile ✓</span>
+          <span class="tag blue">IMDS ✓</span>
+          <span class="tag blue">Security Groups ✓</span>
+          <span class="tag blue">NACL vs SG ✓</span>
+          <span class="tag blue">SSM ✓</span>
+          <span class="tag blue">KMS ✓</span>
+          <span class="tag blue">ECR ✓</span>
+          <span class="tag blue">Tag Immutability ✓</span>
+          <span class="tag blue">Auth vs AuthZ ✓</span>
+        </div>
+        <p style="color:var(--text3);font-size:13px;margin-top:20px;font-family:var(--mono);">Soldier 3 Mission Complete — 10 concepts · 20 interview Q&As · 3 deliverable files</p>
+      </div>
+    </div><!-- /qa-section -->
+
+  </div><!-- /content -->
+</main>
+
+<script>
+  // Progress bar
+  window.addEventListener('scroll', () => {
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrolled = (window.scrollY / docHeight) * 100;
+    document.getElementById('progress').style.width = scrolled + '%';
+  });
+
+  // Active nav tracking
+  const sections = document.querySelectorAll('.concept-section, .qa-section');
+  const navItems = document.querySelectorAll('.nav-item');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navItems.forEach(item => {
+          item.classList.remove('active');
+          if (item.getAttribute('href') === '#' + id) {
+            item.classList.add('active');
+          }
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+
+  // Fade in on scroll
+  const fadeEls = document.querySelectorAll('.fade-in');
+  const fadeObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        fadeObs.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -80px 0px' });
+
+  fadeEls.forEach(el => fadeObs.observe(el));
+
+  // Q&A accordion toggle
+  function toggleQA(id) {
+    const card = document.getElementById(id);
+    const wasOpen = card.classList.contains('open');
+    // Close all
+    document.querySelectorAll('.qa-card').forEach(c => c.classList.remove('open'));
+    // Open clicked if it was closed
+    if (!wasOpen) card.classList.add('open');
+  }
+</script>
+</body>
+</html>

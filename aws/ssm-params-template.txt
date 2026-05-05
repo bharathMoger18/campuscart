@@ -1,0 +1,370 @@
+═══════════════════════════════════════════════════════════════════════════════
+CampusCart — SSM Parameter Store Template
+Soldier 3 — IAM + Security Groups + SSM Parameter Store
+═══════════════════════════════════════════════════════════════════════════════
+
+All 18 parameters live under the /campuscart/ path in AWS SSM Parameter Store
+(Region: ap-south-1).
+
+Soldier 4 fetches ALL parameters in ONE command:
+  aws ssm get-parameters-by-path \
+    --path /campuscart/ \
+    --with-decryption \
+    --region ap-south-1
+
+═══════════════════════════════════════════════════════════════════════════════
+LEGEND:
+  [STRING]        = Plain text. Not encrypted. Safe to see in logs.
+  [SECURESTRING]  = KMS-encrypted at rest. Decrypted only when fetched with
+                    --with-decryption flag by an entity that has IAM permission.
+  ✅ READY        = Pre-filled with correct production value. No change needed.
+  ⚠  CHANGE ME   = Has placeholder value. MUST be updated before Soldier 6 runs.
+═══════════════════════════════════════════════════════════════════════════════
+
+── DJANGO APPLICATION ──────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/DJANGO_SECRET_KEY
+Type                 : [SECURESTRING]
+Status               : ⚠  CHANGE ME
+Current Value        : CHANGE_ME_REPLACE_WITH_50_CHAR_RANDOM_KEY_*
+What to set          : A 50+ character random string. Used for session signing,
+                       CSRF tokens, JWT tokens, password reset links.
+                       NEVER reuse this between environments.
+How to generate      :
+  python3 -c "import secrets; print(secrets.token_urlsafe(50))"
+  OR: openssl rand -base64 50
+Update command       :
+  aws ssm put-parameter \
+    --name /campuscart/DJANGO_SECRET_KEY \
+    --value "YOUR_GENERATED_KEY_HERE" \
+    --type SecureString \
+    --overwrite \
+    --region ap-south-1
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/DEBUG
+Type                 : [STRING]
+Status               : ✅ READY
+Value                : False
+Why False            : In production, Django must NOT run in debug mode.
+                       Debug mode exposes full stack traces (with SQL queries
+                       and source code) in browser error pages — critical
+                       information leak. Always False in production.
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/ALLOWED_HOSTS
+Type                 : [STRING]
+Status               : ⚠  CHANGE ME
+Current Value        : CHANGE_ME_EC2_ELASTIC_IP,localhost,127.0.0.1
+What to set          : Replace CHANGE_ME_EC2_ELASTIC_IP with the actual Elastic
+                       IP allocated by ec2-launch.sh (Soldier 2).
+                       Example: 13.232.45.67,localhost,127.0.0.1
+                       If you have a domain name, add it too:
+                       campuscart.example.com,13.232.45.67,localhost,127.0.0.1
+Update command       :
+  aws ssm put-parameter \
+    --name /campuscart/ALLOWED_HOSTS \
+    --value "13.232.45.67,localhost,127.0.0.1" \
+    --type String \
+    --overwrite \
+    --region ap-south-1
+
+── POSTGRESQL DATABASE ─────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/DB_NAME
+Type                 : [STRING]
+Status               : ✅ READY
+Value                : campuscart_db
+Notes                : The PostgreSQL database name. Matches the database
+                       created inside the db Docker container by the POSTGRES_DB
+                       environment variable in docker-compose.yml.
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/DB_USER
+Type                 : [STRING]
+Status               : ✅ READY
+Value                : campuscart_user
+Notes                : The PostgreSQL username. Matches POSTGRES_USER in
+                       docker-compose.yml.
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/DB_PASSWORD
+Type                 : [SECURESTRING]
+Status               : ⚠  CHANGE ME
+Current Value        : CHANGE_ME_STRONG_DB_PASSWORD_HERE
+What to set          : A strong, unique password for PostgreSQL.
+                       Use minimum 20 characters. Mix of letters, numbers,
+                       symbols. NEVER use a password from any other system.
+How to generate      :
+  openssl rand -base64 24
+Update command       :
+  aws ssm put-parameter \
+    --name /campuscart/DB_PASSWORD \
+    --value "YOUR_STRONG_PASSWORD_HERE" \
+    --type SecureString \
+    --overwrite \
+    --region ap-south-1
+IMPORTANT            : This same password must be in docker-compose.yml as
+                       POSTGRES_PASSWORD for the db container. Soldier 4's
+                       provisioning script writes it to the .env file which
+                       docker-compose reads.
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/DB_HOST
+Type                 : [STRING]
+Status               : ✅ READY
+Value                : db
+CRITICAL NOTE        : Value is "db" — the Docker Compose service name.
+                       Do NOT change to "localhost" or "127.0.0.1".
+                       Django runs in the "web" container. PostgreSQL runs in
+                       the "db" container. Docker's internal DNS resolves "db"
+                       to the database container's private IP automatically.
+                       Using "localhost" would make Django look for Postgres
+                       inside its own container — it would fail immediately.
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/DB_PORT
+Type                 : [STRING]
+Status               : ✅ READY
+Value                : 5432
+Notes                : Standard PostgreSQL port. No reason to change.
+
+── REDIS ───────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/REDIS_HOST
+Type                 : [STRING]
+Status               : ✅ READY
+Value                : redis
+CRITICAL NOTE        : Same principle as DB_HOST — "redis" is the Docker Compose
+                       service name. Django Channels uses Redis as the channel
+                       layer backend for WebSocket connections. The push
+                       notification service also uses Redis for async tasks.
+                       Do NOT change to "localhost".
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/REDIS_PORT
+Type                 : [STRING]
+Status               : ✅ READY
+Value                : 6379
+Notes                : Standard Redis port. No reason to change.
+
+── EMAIL (GMAIL SMTP) ──────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/EMAIL_HOST_USER
+Type                 : [STRING]
+Status               : ⚠  CHANGE ME
+Current Value        : CHANGE_ME_GMAIL_ADDRESS@gmail.com
+What to set          : The Gmail address CampusCart uses to send transactional
+                       emails: order confirmations, password reset links,
+                       account verification emails.
+                       Example: campuscart.notify@gmail.com
+Update command       :
+  aws ssm put-parameter \
+    --name /campuscart/EMAIL_HOST_USER \
+    --value "campuscart.notify@gmail.com" \
+    --type String \
+    --overwrite \
+    --region ap-south-1
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/EMAIL_HOST_PASSWORD
+Type                 : [SECURESTRING]
+Status               : ⚠  CHANGE ME
+Current Value        : CHANGE_ME_GMAIL_APP_PASSWORD_16CHARS
+What to set          : A Gmail App Password (NOT your Gmail login password).
+                       Gmail requires 2-Factor Authentication + App Password
+                       for SMTP access from external applications.
+How to get it        :
+  1. Go to myaccount.google.com
+  2. Security → 2-Step Verification → Enable it
+  3. Security → App passwords → Create new → Select "Mail" → "Other"
+  4. Copy the 16-character code (format: xxxx xxxx xxxx xxxx)
+  5. Remove spaces when storing: xxxxxxxxxxxxxxxx
+Update command       :
+  aws ssm put-parameter \
+    --name /campuscart/EMAIL_HOST_PASSWORD \
+    --value "xxxxxxxxxxxxxxxx" \
+    --type SecureString \
+    --overwrite \
+    --region ap-south-1
+
+── STRIPE PAYMENTS ─────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/STRIPE_SECRET_KEY
+Type                 : [SECURESTRING]
+Status               : ⚠  CHANGE ME
+Current Value        : CHANGE_ME_sk_live_STRIPE_SECRET_KEY
+What to set          : Your Stripe secret API key.
+                       For testing: starts with sk_test_
+                       For production: starts with sk_live_
+Where to get         : Stripe Dashboard → Developers → API keys → Secret key
+SECURITY WARNING     : This key can charge credit cards, issue refunds, and
+                       access all payment records. NEVER expose it in frontend
+                       code, logs, or git history. SSM SecureString is the
+                       correct way to store this.
+Update command       :
+  aws ssm put-parameter \
+    --name /campuscart/STRIPE_SECRET_KEY \
+    --value "sk_live_..." \
+    --type SecureString \
+    --overwrite \
+    --region ap-south-1
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/STRIPE_PUBLISHABLE_KEY
+Type                 : [STRING]
+Status               : ⚠  CHANGE ME
+Current Value        : CHANGE_ME_pk_live_STRIPE_PUBLISHABLE_KEY
+What to set          : Your Stripe publishable key.
+                       For testing: starts with pk_test_
+                       For production: starts with pk_live_
+Where to get         : Stripe Dashboard → Developers → API keys → Publishable key
+Why String (not Secure): The publishable key is DESIGNED to be public — it is
+                          sent to the browser for Stripe.js to use. It cannot
+                          be used for server-side operations that require auth.
+Update command       :
+  aws ssm put-parameter \
+    --name /campuscart/STRIPE_PUBLISHABLE_KEY \
+    --value "pk_live_..." \
+    --type String \
+    --overwrite \
+    --region ap-south-1
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/STRIPE_WEBHOOK_SECRET
+Type                 : [SECURESTRING]
+Status               : ⚠  CHANGE ME
+Current Value        : CHANGE_ME_whsec_STRIPE_WEBHOOK_SECRET
+What to set          : The Stripe webhook signing secret. Starts with whsec_
+Where to get         :
+  1. Stripe Dashboard → Developers → Webhooks → Add endpoint
+  2. Endpoint URL: http://YOUR_EC2_IP/api/payments/webhook/
+  3. Events to listen to: payment_intent.succeeded, payment_intent.failed,
+     checkout.session.completed (or whichever your Django view handles)
+  4. After creating: Reveal signing secret → copy the whsec_... value
+Why it matters       : Django verifies Stripe's HMAC-SHA256 signature on every
+                       webhook. Without this, anyone could POST fake payment
+                       confirmations to your webhook URL and mark orders as paid.
+Update command       :
+  aws ssm put-parameter \
+    --name /campuscart/STRIPE_WEBHOOK_SECRET \
+    --value "whsec_..." \
+    --type SecureString \
+    --overwrite \
+    --region ap-south-1
+
+── VAPID KEYS (WEB PUSH NOTIFICATIONS) ─────────────────────────────────────────
+
+Parameter Name       : /campuscart/VAPID_PUBLIC_KEY
+Type                 : [STRING]
+Status               : ⚠  CHANGE ME
+Current Value        : CHANGE_ME_VAPID_PUBLIC_KEY_BASE64URL
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/VAPID_PRIVATE_KEY
+Type                 : [SECURESTRING]
+Status               : ⚠  CHANGE ME
+Current Value        : CHANGE_ME_VAPID_PRIVATE_KEY_BASE64URL
+
+───────────────────────────────────────────────────────────────────────────────
+
+Parameter Name       : /campuscart/VAPID_EMAIL
+Type                 : [STRING]
+Status               : ⚠  CHANGE ME
+Current Value        : mailto:CHANGE_ME_YOUR_EMAIL@domain.com
+What to set          : Your contact email prefixed with "mailto:"
+                       Example: mailto:bharath@example.com
+                       The "mailto:" prefix is REQUIRED by the VAPID spec.
+
+HOW TO GENERATE VAPID KEYS (for all three above):
+  Method 1 — Python (recommended, matches your Django setup):
+    pip install pywebpush
+    python3 -c "
+    from py_vapid import Vapid
+    v = Vapid()
+    v.generate_keys()
+    print('Public Key:', v.public_key_urlsafe)
+    print('Private Key:', v.private_key_urlsafe)
+    "
+
+  Method 2 — web-push CLI:
+    npx web-push generate-vapid-keys
+
+Update commands      :
+  aws ssm put-parameter \
+    --name /campuscart/VAPID_PUBLIC_KEY \
+    --value "YOUR_VAPID_PUBLIC_KEY" \
+    --type String \
+    --overwrite \
+    --region ap-south-1
+
+  aws ssm put-parameter \
+    --name /campuscart/VAPID_PRIVATE_KEY \
+    --value "YOUR_VAPID_PRIVATE_KEY" \
+    --type SecureString \
+    --overwrite \
+    --region ap-south-1
+
+  aws ssm put-parameter \
+    --name /campuscart/VAPID_EMAIL \
+    --value "mailto:your@email.com" \
+    --type String \
+    --overwrite \
+    --region ap-south-1
+
+═══════════════════════════════════════════════════════════════════════════════
+SUMMARY TABLE
+═══════════════════════════════════════════════════════════════════════════════
+
+#   Parameter Name                    Type          Status
+─── ─────────────────────────────── ────────────── ─────────────────────────
+ 1  /campuscart/DJANGO_SECRET_KEY    SecureString  ⚠  CHANGE ME (generate new)
+ 2  /campuscart/DEBUG                String        ✅ READY (False)
+ 3  /campuscart/ALLOWED_HOSTS        String        ⚠  CHANGE ME (add Elastic IP)
+ 4  /campuscart/DB_NAME              String        ✅ READY (campuscart_db)
+ 5  /campuscart/DB_USER              String        ✅ READY (campuscart_user)
+ 6  /campuscart/DB_PASSWORD          SecureString  ⚠  CHANGE ME (set strong password)
+ 7  /campuscart/DB_HOST              String        ✅ READY (db)
+ 8  /campuscart/DB_PORT              String        ✅ READY (5432)
+ 9  /campuscart/REDIS_HOST           String        ✅ READY (redis)
+10  /campuscart/REDIS_PORT           String        ✅ READY (6379)
+11  /campuscart/EMAIL_HOST_USER      String        ⚠  CHANGE ME (set Gmail address)
+12  /campuscart/EMAIL_HOST_PASSWORD  SecureString  ⚠  CHANGE ME (set App Password)
+13  /campuscart/STRIPE_SECRET_KEY    SecureString  ⚠  CHANGE ME (from Stripe dashboard)
+14  /campuscart/STRIPE_PUBLISHABLE_KEY String      ⚠  CHANGE ME (from Stripe dashboard)
+15  /campuscart/STRIPE_WEBHOOK_SECRET  SecureString ⚠  CHANGE ME (after webhook created)
+16  /campuscart/VAPID_PUBLIC_KEY     String        ⚠  CHANGE ME (generate with pywebpush)
+17  /campuscart/VAPID_PRIVATE_KEY    SecureString  ⚠  CHANGE ME (generate with pywebpush)
+18  /campuscart/VAPID_EMAIL          String        ⚠  CHANGE ME (set mailto: address)
+
+Total: 18 parameters | 8 SecureString (KMS encrypted) | 10 String
+Ready: 7  |  Need real values: 11
+
+═══════════════════════════════════════════════════════════════════════════════
+SOLDIER 6 CHECKLIST — before running the full deployment:
+═══════════════════════════════════════════════════════════════════════════════
+[ ] DJANGO_SECRET_KEY  — generated and set in SSM
+[ ] ALLOWED_HOSTS      — Elastic IP from ec2-launch.sh added
+[ ] DB_PASSWORD        — strong unique password set
+[ ] EMAIL_HOST_USER    — real Gmail address set
+[ ] EMAIL_HOST_PASSWORD — real Gmail App Password set
+[ ] STRIPE_SECRET_KEY  — from Stripe dashboard
+[ ] STRIPE_PUBLISHABLE_KEY — from Stripe dashboard
+[ ] STRIPE_WEBHOOK_SECRET — after creating webhook endpoint in Stripe
+[ ] VAPID_PUBLIC_KEY   — generated
+[ ] VAPID_PRIVATE_KEY  — generated
+[ ] VAPID_EMAIL        — set with mailto: prefix
+[ ] GitHub Secrets set: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, ECR_REPOSITORY
+
+═══════════════════════════════════════════════════════════════════════════════

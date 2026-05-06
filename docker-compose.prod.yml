@@ -1,0 +1,114 @@
+# ==============================================================================
+# CampusCart — docker-compose.prod.yml
+# ==============================================================================
+# PURPOSE:
+#   A Docker Compose OVERRIDE file for production deployment.
+#   Used together with docker-compose.yml (the base file) like this:
+#
+#     docker compose \
+#       -f docker-compose.yml \
+#       -f docker-compose.prod.yml \
+#       up -d --no-build
+#
+#   The second -f file OVERRIDES the first. Only the differences live here.
+#   Everything else (nginx, db, redis config) stays exactly as in docker-compose.yml.
+#
+# THE ONE THING THIS FILE DOES:
+#   Replaces the web service's "build:" directive with "image:" pointing to
+#   the pre-built ECR image. That's it. Four lines of override for the entire
+#   production deployment difference.
+#
+# WHY A SEPARATE OVERRIDE FILE (not one big production compose file):
+#   Anti-pattern: maintaining two complete, duplicate compose files.
+#   If you add a new environment variable to nginx, you'd update both files.
+#   They drift apart. Bugs creep in. It violates DRY (Don't Repeat Yourself).
+#
+#   Correct pattern: one base file (docker-compose.yml) as the single source
+#   of truth, and one tiny override file (this file) with ONLY what's different
+#   in production. nginx, db, redis are identical in dev and prod — they live
+#   only in docker-compose.yml and are inherited automatically.
+#
+# HOW DOCKER COMPOSE MERGES TWO FILES:
+#   Docker Compose performs a deep merge:
+#   - For scalar values (image, restart, etc.): override file wins.
+#   - For maps (environment, volumes, etc.): keys are merged. Override file
+#     adds or replaces individual keys, doesn't wipe the whole map.
+#   - For lists (ports, depends_on, etc.): lists are appended/merged.
+#   - The !reset tag: completely removes a key from the merged result.
+#     Without !reset on "build:", both build: and image: would exist together.
+#     With !reset, build: is completely gone from the final merged config.
+#
+# THE WEB_IMAGE VARIABLE:
+#   ${WEB_IMAGE} is read from the shell environment when docker compose runs.
+#   deploy.sh exports this variable before calling docker compose:
+#     export WEB_IMAGE="021859068764.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web:abc1234"
+#   Docker Compose substitutes ${WEB_IMAGE} with that value at runtime.
+#   This is how the git commit SHA (set by GitHub Actions) flows all the way
+#   into the running container — without modifying any file on disk.
+#
+# INTERVIEW EXPLANATION:
+#   "docker-compose.prod.yml is a four-line override file. It removes the
+#    build directive from the web service using the !reset YAML tag, and
+#    replaces it with an image directive pointing to the pre-built ECR image.
+#    The image tag — the git commit SHA — is passed as an environment variable
+#    from deploy.sh into Docker Compose at runtime. We don't build on EC2 in
+#    production because the t2.micro has only 1GB RAM and building a Django
+#    image with C extension compilation would OOM-kill the build process."
+# ==============================================================================
+
+version: "3.9"
+# Must match the version in docker-compose.yml (also 3.9).
+# Version 3.9 is the latest stable Compose file format.
+# It supports the !reset YAML tag and all features we use.
+
+services:
+
+  # ── web service override ────────────────────────────────────────────────────
+  # This is the ONLY service we override. nginx, db, and redis are not
+  # mentioned here at all — they inherit their full config from docker-compose.yml.
+  web:
+
+    build: !reset {}
+    # !reset is a special YAML tag supported by Docker Compose v2.
+    #
+    # WHY we need !reset:
+    #   docker-compose.yml defines the web service with:
+    #     build:
+    #       context: ./campuscart-backend
+    #       dockerfile: Dockerfile
+    #   If we only added "image: ${WEB_IMAGE}" here without !reset,
+    #   the merged result would have BOTH build: AND image: defined.
+    #   Docker Compose with --no-build would use image: and ignore build: —
+    #   but it's cleaner and safer to remove build: entirely.
+    #   !reset {} completely removes the build: key from the final merged config.
+    #
+    # WHAT "!reset {}" MEANS:
+    #   !reset is the tag. {} is an empty map value (the replacement).
+    #   Together: "reset this key to nothing" = remove it from merged output.
+    #
+    # ALTERNATIVE if !reset gives issues on older Compose versions:
+    #   Just having "image: ${WEB_IMAGE}" with --no-build flag also works.
+    #   The --no-build flag in deploy.sh is the real safety net regardless.
+
+    image: ${WEB_IMAGE}
+    # ${WEB_IMAGE} is substituted at runtime from the shell environment.
+    # deploy.sh exports it before running docker compose:
+    #   export WEB_IMAGE="021859068764.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web:abc1234"
+    #
+    # Full value example:
+    #   021859068764.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web:a3f1c9d2e8b4
+    #   └─────────────────────────────────────────────────────────┘  └──────────┘
+    #                    ECR Registry URL + repo name                 git commit SHA
+    #
+    # If WEB_IMAGE is not set in the environment when docker compose runs,
+    # Docker Compose will error: "variable WEB_IMAGE is not set".
+    # This is correct behavior — a deployment without a specified image tag
+    # should fail loudly, not silently fall back to some default.
+    #
+    # WHY git commit SHA as the tag (not "latest"):
+    #   "latest" is non-deterministic — it changes every push.
+    #   A SHA tag is immutable. "campuscart-web:a3f1c9d" will always be the
+    #   exact same image binary, forever. This enables:
+    #   - Auditability: inspect any running container and know the exact commit
+    #   - Rollback: deploy.sh with a previous SHA rolls back instantly
+    #   - Traceability: match running code to Git history, PRs, and CI runs

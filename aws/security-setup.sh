@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# CampusCart — Soldier 3: Security Setup Script
+# CampusCart - Soldier 3: Security Setup Script
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # WHAT THIS SCRIPT CREATES (in order):
-#   STEP 1 — Security Group       : campuscart-sg
-#   STEP 2 — IAM Policy           : campuscart-ssm-policy
-#   STEP 3 — IAM Role             : campuscart-ec2-role
-#   STEP 4 — Instance Profile     : campuscart-ec2-profile
-#   STEP 5 — ECR Repository       : campuscart-web
-#   STEP 6 — SSM Parameters       : 18 parameters under /campuscart/*
-#   STEP 7 — GitHub Actions User  : campuscart-github-actions
+#   STEP 1 - Security Group       : campuscart-sg
+#   STEP 2 - IAM Policy           : campuscart-ssm-policy
+#   STEP 3 - IAM Role             : campuscart-ec2-role
+#   STEP 4 - Instance Profile     : campuscart-ec2-profile
+#   STEP 5 - ECR Repository       : campuscart-web
+#   STEP 6 - SSM Parameters       : 18 parameters under /campuscart/*
+#   STEP 7 - GitHub Actions User  : campuscart-github-actions
 #
 # ORDERING REQUIREMENT:
 #   Run AFTER  vpc-network.sh  (needs the VPC to exist)
@@ -37,7 +37,7 @@ DIM='\033[2m'
 NC='\033[0m'  # No Color / Reset
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-print_step()    { echo -e "\n${BOLD}${CYAN}━━━ STEP $1 — $2 ━━━${NC}"; }
+print_step()    { echo -e "\n${BOLD}${CYAN}━━━ STEP $1 - $2 ━━━${NC}"; }
 print_ok()      { echo -e "  ${GREEN}✔${NC} $1"; }
 print_info()    { echo -e "  ${BLUE}ℹ${NC}  $1"; }
 print_warn()    { echo -e "  ${YELLOW}⚠${NC}  $1"; }
@@ -70,7 +70,7 @@ cat << 'EOF'
 /___/\___/\__,_/___/\_,_/_/  \__/___/\__/\__/_,_/\__/
 EOF
 echo -e "${NC}"
-echo -e "${BOLD}Soldier 3 — IAM + Security Groups + SSM Parameter Store${NC}"
+echo -e "${BOLD}Soldier 3 - IAM + Security Groups + SSM Parameter Store${NC}"
 echo -e "${DIM}Region: ${REGION} | Project: CampusCart${NC}"
 echo ""
 
@@ -113,7 +113,7 @@ print_ok "VPC '${VPC_NAME}' found: ${VPC_ID}"
 
 # Detect current public IP automatically (used for SSH rule)
 # WHY AUTO-DETECT: Soldier 6 runs this script at execution time. The auto-detect
-# captures Bharath's REAL public IP at that exact moment — no manual placeholder
+# captures Bharath's REAL public IP at that exact moment - no manual placeholder
 # replacement needed. This is production-quality practice.
 print_info "Detecting your public IP for SSH rule..."
 MY_IP=$(curl -s --max-time 10 https://checkip.amazonaws.com)
@@ -129,7 +129,7 @@ echo ""
 echo -e "${GREEN}${BOLD}All pre-flight checks passed. Beginning security setup...${NC}"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 1 — SECURITY GROUP
+# STEP 1 - SECURITY GROUP
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # WHAT IS A SECURITY GROUP?
@@ -137,8 +137,8 @@ echo -e "${GREEN}${BOLD}All pre-flight checks passed. Beginning security setup..
 # level. Every EC2 instance must belong to at least one Security Group.
 #
 # STATEFUL means: if you allow an inbound connection, the RETURN traffic is
-# automatically allowed — you don't need a separate outbound rule for it.
-# Example: A user sends HTTP request (inbound port 80 — allowed). The response
+# automatically allowed - you don't need a separate outbound rule for it.
+# Example: A user sends HTTP request (inbound port 80 - allowed). The response
 # flows back out automatically even though we haven't explicitly added an outbound
 # rule for port 80.
 #
@@ -147,17 +147,17 @@ echo -e "${GREEN}${BOLD}All pre-flight checks passed. Beginning security setup..
 # EC2 needs to reach ECR (to pull Docker images), SSM (to fetch secrets), package
 # repos (apt-get), and CloudWatch (to ship logs). Restricting outbound would break
 # all of these without adding meaningful security (attackers already inside can use
-# DNS, HTTP, etc. — outbound restrictions rarely stop them).
+# DNS, HTTP, etc. - outbound restrictions rarely stop them).
 #
 # WHY PORT 22 IS RESTRICTED:
 # SSH is the most brute-forced port on the internet. If you open 0.0.0.0/0 on
 # port 22, bots will hammer it within minutes. Restricting to /32 (your exact IP)
 # means only YOUR machine can even attempt an SSH connection. Bots get silently
-# dropped at the Security Group level — they can't even reach the SSH daemon.
+# dropped at the Security Group level - they can't even reach the SSH daemon.
 # ═══════════════════════════════════════════════════════════════════════════════
 print_step "1" "SECURITY GROUP (${SG_NAME})"
 
-# Check if Security Group already exists (idempotency — safe to run twice)
+# Check if Security Group already exists (idempotency - safe to run twice)
 EXISTING_SG=$(aws ec2 describe-security-groups \
   --filters "Name=group-name,Values=${SG_NAME}" "Name=vpc-id,Values=${VPC_ID}" \
   --query "SecurityGroups[0].GroupId" \
@@ -173,7 +173,7 @@ else
   # --description is required by AWS; it's shown in the console
   SG_ID=$(aws ec2 create-security-group \
     --group-name "$SG_NAME" \
-    --description "CampusCart EC2 Security Group — HTTP, HTTPS public, SSH restricted" \
+    --description "CampusCart EC2 Security Group - HTTP, HTTPS public, SSH restricted" \
     --vpc-id "$VPC_ID" \
     --region "$REGION" \
     --query "GroupId" \
@@ -193,14 +193,14 @@ else
   # ── INBOUND RULE 1: HTTP (port 80) ──────────────────────────────────────────
   # WHY: Nginx listens on port 80 inside the Docker stack. All web traffic for
   # CampusCart comes through here. Open to 0.0.0.0/0 (entire internet) because
-  # this is a PUBLIC web application — any user must be able to reach it.
+  # this is a PUBLIC web application - any user must be able to reach it.
   aws ec2 authorize-security-group-ingress \
     --group-id "$SG_ID" \
     --protocol tcp \
     --port 80 \
     --cidr 0.0.0.0/0 \
     --region "$REGION"
-  print_ok "Inbound rule added: TCP port 80 (HTTP) from 0.0.0.0/0 — public web traffic"
+  print_ok "Inbound rule added: TCP port 80 (HTTP) from 0.0.0.0/0 - public web traffic"
 
   # ── INBOUND RULE 2: HTTPS (port 443) ────────────────────────────────────────
   # WHY: When we add an SSL certificate later (Let's Encrypt / ACM), Nginx will
@@ -213,11 +213,11 @@ else
     --port 443 \
     --cidr 0.0.0.0/0 \
     --region "$REGION"
-  print_ok "Inbound rule added: TCP port 443 (HTTPS) from 0.0.0.0/0 — public HTTPS traffic"
+  print_ok "Inbound rule added: TCP port 443 (HTTPS) from 0.0.0.0/0 - public HTTPS traffic"
 
   # ── INBOUND RULE 3: SSH (port 22) ───────────────────────────────────────────
   # WHY: We need SSH to provision the EC2 (Soldier 4's script runs over SSH),
-  # and for debugging. Restricted to MY_IP/32 ONLY — this is a critical security
+  # and for debugging. Restricted to MY_IP/32 ONLY - this is a critical security
   # decision. /32 in CIDR notation means all 32 bits of the IP are fixed = exactly
   # one IP address. No other machine on earth can initiate SSH to this EC2.
   # Without this restriction, bots would hammer port 22 within minutes of launch.
@@ -227,27 +227,27 @@ else
     --port 22 \
     --cidr "${MY_IP}/32" \
     --region "$REGION"
-  print_ok "Inbound rule added: TCP port 22 (SSH) from ${MY_IP}/32 — YOUR IP only"
+  print_ok "Inbound rule added: TCP port 22 (SSH) from ${MY_IP}/32 - YOUR IP only"
 
   # ── OUTBOUND RULE: All traffic allowed ──────────────────────────────────────
   # WHY: AWS adds a default allow-all outbound rule automatically to every new
   # Security Group. We do NOT remove it because EC2 NEEDS to make outbound
   # connections to:
-  #   - ECR (021859068764.dkr.ecr.ap-south-1.amazonaws.com) — pull Docker images
-  #   - SSM (ssm.ap-south-1.amazonaws.com) — fetch secrets from Parameter Store
-  #   - CloudWatch (logs.ap-south-1.amazonaws.com) — ship application logs
+  #   - ECR (021859068764.dkr.ecr.ap-south-1.amazonaws.com) - pull Docker images
+  #   - SSM (ssm.ap-south-1.amazonaws.com) - fetch secrets from Parameter Store
+  #   - CloudWatch (logs.ap-south-1.amazonaws.com) - ship application logs
   #   - Ubuntu package repos (apt-get update/upgrade)
-  #   - Stripe API (api.stripe.com) — payment processing from Django
+  #   - Stripe API (api.stripe.com) - payment processing from Django
   # Restricting outbound would require whitelisting all of these by IP, which
   # changes frequently and is operationally impractical for a small project.
-  print_ok "Outbound rule: all traffic allowed (AWS default — required for ECR, SSM, CloudWatch)"
+  print_ok "Outbound rule: all traffic allowed (AWS default - required for ECR, SSM, CloudWatch)"
 fi
 
 print_val "Security Group ID" "$SG_ID"
 print_val "Security Group Name" "$SG_NAME"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 2 — IAM POLICY (campuscart-ssm-policy)
+# STEP 2 - IAM POLICY (campuscart-ssm-policy)
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # WHAT IS AN IAM POLICY?
@@ -256,11 +256,11 @@ print_val "Security Group Name" "$SG_NAME"
 # roles, groups) to grant them permissions.
 #
 # IAM POLICY STRUCTURE:
-#   Version   — always "2012-10-17" (the policy language version — never changes)
-#   Statement — array of permission rules
-#     Effect   — "Allow" or "Deny"
-#     Action   — what AWS API calls are permitted (e.g., "ssm:GetParameter")
-#     Resource — which specific resources (using ARN format)
+#   Version   - always "2012-10-17" (the policy language version - never changes)
+#   Statement - array of permission rules
+#     Effect   - "Allow" or "Deny"
+#     Action   - what AWS API calls are permitted (e.g., "ssm:GetParameter")
+#     Resource - which specific resources (using ARN format)
 #
 # ARN FORMAT: arn:partition:service:region:account-id:resource
 #   Example:  arn:aws:ssm:ap-south-1:*:parameter/campuscart/*
@@ -274,12 +274,12 @@ print_val "Security Group Name" "$SG_NAME"
 # PRINCIPLE OF LEAST PRIVILEGE:
 # Grant ONLY the permissions that are actually needed, on ONLY the resources
 # that actually need them. Our EC2 role needs to:
-#   - Read SSM parameters (but only /campuscart/* — not other projects)
+#   - Read SSM parameters (but only /campuscart/* - not other projects)
 #   - Pull Docker images from ECR
 #   - Write logs to CloudWatch
 # That is ALL. It does NOT need S3, RDS, Route53, or any other service.
 # If the EC2 is compromised, an attacker with this role can only read our
-# /campuscart/* SSM params and pull our Docker image — they cannot delete
+# /campuscart/* SSM params and pull our Docker image - they cannot delete
 # infrastructure, access other services, or pivot to other AWS accounts.
 # ═══════════════════════════════════════════════════════════════════════════════
 print_step "2" "IAM POLICY (${IAM_POLICY_NAME})"
@@ -287,33 +287,33 @@ print_step "2" "IAM POLICY (${IAM_POLICY_NAME})"
 # Build the policy JSON document
 # Each permission block is carefully scoped:
 #
-# BLOCK 1 — SSM GetParameter actions:
-#   GetParameter         — fetch ONE parameter by exact name
-#   GetParameters        — fetch multiple parameters by exact names (batch)
-#   GetParametersByPath  — fetch ALL parameters under /campuscart/* in ONE API call
+# BLOCK 1 - SSM GetParameter actions:
+#   GetParameter         - fetch ONE parameter by exact name
+#   GetParameters        - fetch multiple parameters by exact names (batch)
+#   GetParametersByPath  - fetch ALL parameters under /campuscart/* in ONE API call
 #                          Soldier 4's provisioning script uses GetParametersByPath
 #                          to load ALL 18 environment variables in a single command.
 #   Resource: arn:aws:ssm:ap-south-1:*:parameter/campuscart/*
 #   The trailing /* means ANY parameter whose name starts with /campuscart/
-#   This CANNOT access /other-project/* or /aws/* — scoped to our project only.
+#   This CANNOT access /other-project/* or /aws/* - scoped to our project only.
 #
-# BLOCK 2 — ECR token:
-#   ecr:GetAuthorizationToken on * (must be * — it's a global token, not per-repo)
+# BLOCK 2 - ECR token:
+#   ecr:GetAuthorizationToken on * (must be * - it's a global token, not per-repo)
 #   This gets a temporary Docker login token for 12 hours. Without this, Docker
-#   cannot authenticate to ECR at all — `docker pull` would fail with 401.
+#   cannot authenticate to ECR at all - `docker pull` would fail with 401.
 #   Resource MUST be * because GetAuthorizationToken is not repo-specific.
 #
-# BLOCK 3 — ECR image pull:
-#   ecr:BatchGetImage          — get image manifest (needed to know what to pull)
-#   ecr:GetDownloadUrlForLayer — get the S3 URLs for each image layer
-#   Resource: scoped to campuscart-web repo only — not all ECR repos in the account
+# BLOCK 3 - ECR image pull:
+#   ecr:BatchGetImage          - get image manifest (needed to know what to pull)
+#   ecr:GetDownloadUrlForLayer - get the S3 URLs for each image layer
+#   Resource: scoped to campuscart-web repo only - not all ECR repos in the account
 #
-# BLOCK 4 — CloudWatch Logs:
-#   CreateLogGroup    — create /campuscart/django etc. log group first time
-#   CreateLogStream   — create a log stream within the group
-#   PutLogEvents      — actually write log data
-#   Resource: * — CloudWatch log group ARNs can be unpredictable; * is acceptable
-#   here because the only action is writing logs — not reading or deleting others.
+# BLOCK 4 - CloudWatch Logs:
+#   CreateLogGroup    - create /campuscart/django etc. log group first time
+#   CreateLogStream   - create a log stream within the group
+#   PutLogEvents      - actually write log data
+#   Resource: * - CloudWatch log group ARNs can be unpredictable; * is acceptable
+#   here because the only action is writing logs - not reading or deleting others.
 
 POLICY_DOCUMENT=$(cat << EOF
 {
@@ -387,7 +387,7 @@ fi
 print_val "Policy ARN" "$POLICY_ARN"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 3 — IAM ROLE (campuscart-ec2-role)
+# STEP 3 - IAM ROLE (campuscart-ec2-role)
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # WHAT IS AN IAM ROLE?
@@ -408,22 +408,22 @@ print_val "Policy ARN" "$POLICY_ARN"
 #   1. We assign the role to the EC2 at launch time
 #   2. The AWS metadata service (169.254.169.254) automatically provides
 #      temporary credentials to any process running on the EC2
-#   3. Credentials auto-rotate every hour — no management needed
+#   3. Credentials auto-rotate every hour - no management needed
 #   4. Even if an attacker reads the temporary credentials from IMDS, they
 #      expire within an hour and have limited permissions
 #
 # TRUST POLICY:
 # The trust policy (also called "assume role policy") defines WHO can assume
 # this role. For our EC2 role, we trust the "ec2.amazonaws.com" service
-# principal — meaning: only the EC2 service itself can assume this role.
+# principal - meaning: only the EC2 service itself can assume this role.
 # This prevents other AWS services or external parties from using this role.
 # ═══════════════════════════════════════════════════════════════════════════════
 print_step "3" "IAM ROLE (${IAM_ROLE_NAME})"
 
-# Trust Policy — defines who can ASSUME this role
+# Trust Policy - defines who can ASSUME this role
 # "Principal": {"Service": "ec2.amazonaws.com"} = only the EC2 service
 # "Action": "sts:AssumeRole" = the mechanism for assuming the role
-# This is why EC2 instances can automatically use this role — AWS internally
+# This is why EC2 instances can automatically use this role - AWS internally
 # calls sts:AssumeRole on behalf of the EC2 when it needs credentials.
 TRUST_POLICY=$(cat << 'EOF'
 {
@@ -458,7 +458,7 @@ else
   ROLE_ARN=$(aws iam create-role \
     --role-name "$IAM_ROLE_NAME" \
     --assume-role-policy-document "$TRUST_POLICY" \
-    --description "CampusCart EC2 role — SSM read, ECR pull, CloudWatch logs" \
+    --description "CampusCart EC2 role - SSM read, ECR pull, CloudWatch logs" \
     --query "Role.Arn" \
     --output text)
   print_ok "IAM Role created: ${ROLE_ARN}"
@@ -481,7 +481,7 @@ print_ok "Custom policy attached: ${IAM_POLICY_NAME}"
 # WHY THIS MANAGED POLICY:
 # This is the official AWS policy for enabling AWS Systems Manager (SSM) on EC2.
 # It grants permissions for:
-#   - SSM Session Manager (web-based terminal — alternative to SSH)
+#   - SSM Session Manager (web-based terminal - alternative to SSH)
 #   - SSM Agent to register the instance with SSM
 #   - Sending instance inventory data to AWS
 #   - SSM Run Command (run scripts remotely without SSH)
@@ -495,7 +495,7 @@ print_ok "Managed policy attached: AmazonSSMManagedInstanceCore"
 print_val "Role ARN" "$ROLE_ARN"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 4 — INSTANCE PROFILE (campuscart-ec2-profile)
+# STEP 4 - INSTANCE PROFILE (campuscart-ec2-profile)
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # WHAT IS AN INSTANCE PROFILE?
@@ -504,7 +504,7 @@ print_val "Role ARN" "$ROLE_ARN"
 #
 # WHY CAN'T EC2 USE A ROLE DIRECTLY?
 # EC2 was designed before IAM Roles existed. The original EC2 API only accepted
-# "instance profiles" as a parameter — not role names or ARNs directly. AWS never
+# "instance profiles" as a parameter - not role names or ARNs directly. AWS never
 # changed this API for backward compatibility. So even though everyone says "attach
 # an IAM Role to EC2," under the hood you're actually attaching an Instance Profile
 # that contains the role.
@@ -538,7 +538,7 @@ if [[ -n "$EXISTING_PROFILE" && "$EXISTING_PROFILE" != "None" ]]; then
     --query "InstanceProfile.Arn" \
     --output text)
 else
-  # Create the instance profile (just the container — role not attached yet)
+  # Create the instance profile (just the container - role not attached yet)
   PROFILE_ARN=$(aws iam create-instance-profile \
     --instance-profile-name "$INSTANCE_PROFILE_NAME" \
     --query "InstanceProfile.Arn" \
@@ -546,7 +546,7 @@ else
   print_ok "Instance Profile created: ${PROFILE_ARN}"
 
   # Add the IAM Role INTO the Instance Profile
-  # A profile can hold exactly ONE role — this is AWS's design constraint.
+  # A profile can hold exactly ONE role - this is AWS's design constraint.
   # The role provides the actual permissions; the profile is just the wrapper.
   aws iam add-role-to-instance-profile \
     --instance-profile-name "$INSTANCE_PROFILE_NAME" \
@@ -558,20 +558,20 @@ print_val "Instance Profile ARN" "$PROFILE_ARN"
 print_info "ec2-launch.sh will reference this with: --iam-instance-profile Name=${INSTANCE_PROFILE_NAME}"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 5 — ECR REPOSITORY (campuscart-web)
+# STEP 5 - ECR REPOSITORY (campuscart-web)
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # WHAT IS ECR?
 # Amazon Elastic Container Registry is AWS's fully managed Docker image registry.
-# It is the AWS equivalent of Docker Hub — but private, IAM-controlled, and in
+# It is the AWS equivalent of Docker Hub - but private, IAM-controlled, and in
 # the same AWS network as our EC2, making image pulls fast and free (no data
 # transfer costs between EC2 and ECR in the same region).
 #
 # WHY ECR INSTEAD OF DOCKER HUB:
 #   - PRIVATE: images are not publicly visible; IAM controls who can pull/push
-#   - SAME NETWORK: EC2 in ap-south-1 pulls from ECR ap-south-1 — fast, free
+#   - SAME NETWORK: EC2 in ap-south-1 pulls from ECR ap-south-1 - fast, free
 #   - NO RATE LIMITS: Docker Hub free tier throttles pulls to 100/6hr; ECR has none
-#   - INTEGRATED: our EC2 IAM role already has pull permissions — no login needed
+#   - INTEGRATED: our EC2 IAM role already has pull permissions - no login needed
 #   - VULNERABILITY SCANNING: ECR scans images for CVEs on push automatically
 #
 # IMAGE SCANNING ON PUSH:
@@ -622,7 +622,6 @@ else
   ECR_REPO_ARN="arn:aws:ecr:${REGION}:${ACCOUNT_ID}:repository/${ECR_REPO_NAME}"
   aws ecr tag-resource \
     --resource-arn "$ECR_REPO_ARN" \
-    --tags Key=Project,Value="$PROJECT_TAG" Key=ManagedBy,Value=soldier3 \
     --region "$REGION" 2>/dev/null || true
   print_ok "Tags applied to ECR Repository"
 fi
@@ -632,7 +631,7 @@ print_info "Soldier 5 (GitHub Actions) will push to: ${ECR_URI}:<git-commit-sha>
 print_info "EC2 will pull from: ${ECR_URI}:<git-commit-sha>"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 6 — SSM PARAMETER STORE (18 parameters under /campuscart/*)
+# STEP 6 - SSM PARAMETER STORE (18 parameters under /campuscart/*)
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # WHAT IS SSM PARAMETER STORE?
@@ -641,11 +640,11 @@ print_info "EC2 will pull from: ${ECR_URI}:<git-commit-sha>"
 # configuration without .env files or hardcoded values.
 #
 # STRING vs SECURESTRING:
-#   String      — stored as plain text. Visible in console, CLI, logs. Use for
+#   String      - stored as plain text. Visible in console, CLI, logs. Use for
 #                 non-sensitive config: hostnames, ports, feature flags.
-#   SecureString — encrypted at rest using AWS KMS (Key Management Service).
+#   SecureString - encrypted at rest using AWS KMS (Key Management Service).
 #                 Stored as ciphertext. Decrypted on-the-fly when fetched via SDK.
-#                 Use for passwords, API keys, private keys — anything that would
+#                 Use for passwords, API keys, private keys - anything that would
 #                 cause a security breach if leaked.
 #
 # HOW KMS ENCRYPTION WORKS (envelope encryption):
@@ -654,7 +653,7 @@ print_info "EC2 will pull from: ${ECR_URI}:<git-commit-sha>"
 #   3. Your secret is encrypted with the DEK using AES-256
 #   4. The DEK itself is encrypted with the CMK and stored alongside the ciphertext
 #   5. When you fetch the parameter, KMS decrypts the DEK, then decrypts the secret
-#   6. The plaintext is returned over TLS — never stored unencrypted on disk
+#   6. The plaintext is returned over TLS - never stored unencrypted on disk
 #
 # WHY SSM INSTEAD OF .ENV FILES:
 #   .env file problems:
@@ -663,7 +662,7 @@ print_info "EC2 will pull from: ${ECR_URI}:<git-commit-sha>"
 #     - Copy-pasted between servers → inconsistent, error-prone
 #     - Must be transferred over SSH → risk in transit
 #   SSM Parameter Store:
-#     - Never leaves AWS — fetched at runtime via HTTPS API
+#     - Never leaves AWS - fetched at runtime via HTTPS API
 #     - Full CloudTrail audit log: who fetched which parameter, when, from where
 #     - IAM-controlled: only campuscart-ec2-role can read /campuscart/*
 #     - Centralized: update a value once, all instances get it on next restart
@@ -678,14 +677,14 @@ print_info "EC2 will pull from: ${ECR_URI}:<git-commit-sha>"
 #
 # DB_HOST = "db" and REDIS_HOST = "redis":
 # These values are Docker service names from docker-compose.yml. When Django
-# connects to PostgreSQL, it uses DB_HOST="db" — Docker's internal DNS resolves
+# connects to PostgreSQL, it uses DB_HOST="db" - Docker's internal DNS resolves
 # "db" to the db container's private IP inside the Docker network. This is correct
 # and intentional. NOT "localhost", NOT "127.0.0.1", NOT the EC2 private IP.
 # ═══════════════════════════════════════════════════════════════════════════════
 print_step "6" "SSM PARAMETER STORE (18 parameters under /campuscart/*)"
 
 print_info "Creating String parameters (non-sensitive config)..."
-print_info "Creating SecureString parameters (sensitive secrets — KMS encrypted)..."
+print_info "Creating SecureString parameters (sensitive secrets - KMS encrypted)..."
 echo ""
 
 # Helper function to create or update an SSM parameter
@@ -702,19 +701,18 @@ put_param() {
     --type "$type" \
     --description "$description" \
     --overwrite \
-    --tags Key=Project,Value="$PROJECT_TAG" Key=ManagedBy,Value=soldier3 \
     --region "$REGION" \
     --output json > /dev/null
 
   if [[ "$type" == "SecureString" ]]; then
-    echo -e "  ${GREEN}✔${NC} [${YELLOW}SecureString${NC}] ${BOLD}${name}${NC} — ${DIM}KMS encrypted${NC}"
+    echo -e "  ${GREEN}✔${NC} [${YELLOW}SecureString${NC}] ${BOLD}${name}${NC} - ${DIM}KMS encrypted${NC}"
   else
-    echo -e "  ${GREEN}✔${NC} [${CYAN}String${NC}      ] ${BOLD}${name}${NC} — ${DIM}${value}${NC}"
+    echo -e "  ${GREEN}✔${NC} [${CYAN}String${NC}      ] ${BOLD}${name}${NC} - ${DIM}${value}${NC}"
   fi
 }
 
 # ── Django Application Settings ────────────────────────────────────────────────
-# DJANGO_SECRET_KEY — SecureString
+# DJANGO_SECRET_KEY - SecureString
 # Django uses this 50+ character random key for cryptographic signing:
 # session cookies, CSRF tokens, password reset links, JWT token signing.
 # If leaked, an attacker can forge session cookies and impersonate any user.
@@ -722,19 +720,19 @@ put_param \
   "/campuscart/DJANGO_SECRET_KEY" \
   "CHANGE_ME_REPLACE_WITH_50_CHAR_RANDOM_KEY_$(openssl rand -hex 12)" \
   "SecureString" \
-  "Django cryptographic signing key — sessions, CSRF, JWT"
+  "Django cryptographic signing key - sessions, CSRF, JWT"
 
-# DEBUG — String
+# DEBUG - String
 # In production, DEBUG must be False. If True, Django shows full stack traces
-# including database queries and source code in browser error pages — catastrophic
+# including database queries and source code in browser error pages - catastrophic
 # information leak in production. False hides all internal details from errors.
 put_param \
   "/campuscart/DEBUG" \
   "False" \
   "String" \
-  "Django debug mode — always False in production"
+  "Django debug mode - always False in production"
 
-# ALLOWED_HOSTS — String
+# ALLOWED_HOSTS - String
 # Django's ALLOWED_HOSTS is a security measure against HTTP Host header injection
 # attacks. Django will refuse to serve requests for any hostname not in this list.
 # Update with EC2's Elastic IP after Soldier 2's ec2-launch.sh runs.
@@ -742,43 +740,43 @@ put_param \
   "/campuscart/ALLOWED_HOSTS" \
   "CHANGE_ME_EC2_ELASTIC_IP,localhost,127.0.0.1" \
   "String" \
-  "Django allowed hosts — EC2 Elastic IP and domain (comma-separated)"
+  "Django allowed hosts - EC2 Elastic IP and domain (comma-separated)"
 
 # ── Database Configuration ─────────────────────────────────────────────────────
-# DB_NAME — String (not sensitive — just the database name)
+# DB_NAME - String (not sensitive - just the database name)
 put_param \
   "/campuscart/DB_NAME" \
   "campuscart_db" \
   "String" \
   "PostgreSQL database name"
 
-# DB_USER — String (username not sensitive — password is)
+# DB_USER - String (username not sensitive - password is)
 put_param \
   "/campuscart/DB_USER" \
   "campuscart_user" \
   "String" \
   "PostgreSQL database username"
 
-# DB_PASSWORD — SecureString (MUST be changed before deployment)
-# This password protects all CampusCart data — user accounts, orders, payments.
+# DB_PASSWORD - SecureString (MUST be changed before deployment)
+# This password protects all CampusCart data - user accounts, orders, payments.
 put_param \
   "/campuscart/DB_PASSWORD" \
   "CHANGE_ME_STRONG_DB_PASSWORD_HERE" \
   "SecureString" \
-  "PostgreSQL database password — KMS encrypted"
+  "PostgreSQL database password - KMS encrypted"
 
-# DB_HOST — String
-# CRITICAL: Value is "db" — the Docker Compose service name for PostgreSQL.
+# DB_HOST - String
+# CRITICAL: Value is "db" - the Docker Compose service name for PostgreSQL.
 # Docker's internal DNS resolves "db" to the database container's IP automatically.
-# Do NOT use "localhost" — that would fail because Django runs in a separate container.
-# Do NOT use the EC2's private IP — that would bypass Docker networking.
+# Do NOT use "localhost" - that would fail because Django runs in a separate container.
+# Do NOT use the EC2's private IP - that would bypass Docker networking.
 put_param \
   "/campuscart/DB_HOST" \
   "db" \
   "String" \
-  "PostgreSQL host — Docker Compose service name (NOT localhost)"
+  "PostgreSQL host - Docker Compose service name (NOT localhost)"
 
-# DB_PORT — String
+# DB_PORT - String
 put_param \
   "/campuscart/DB_PORT" \
   "5432" \
@@ -786,7 +784,7 @@ put_param \
   "PostgreSQL default port"
 
 # ── Redis Configuration ────────────────────────────────────────────────────────
-# REDIS_HOST — String
+# REDIS_HOST - String
 # Same principle as DB_HOST: "redis" is the Docker Compose service name.
 # Django Channels uses Redis as the channel layer backend for WebSocket message
 # routing. The push notification service also uses Redis for async task queuing.
@@ -794,9 +792,9 @@ put_param \
   "/campuscart/REDIS_HOST" \
   "redis" \
   "String" \
-  "Redis host — Docker Compose service name for Django Channels WebSockets"
+  "Redis host - Docker Compose service name for Django Channels WebSockets"
 
-# REDIS_PORT — String
+# REDIS_PORT - String
 put_param \
   "/campuscart/REDIS_PORT" \
   "6379" \
@@ -804,14 +802,14 @@ put_param \
   "Redis default port"
 
 # ── Email Configuration (Gmail SMTP) ──────────────────────────────────────────
-# EMAIL_HOST_USER — String (email address itself is not sensitive)
+# EMAIL_HOST_USER - String (email address itself is not sensitive)
 put_param \
   "/campuscart/EMAIL_HOST_USER" \
   "CHANGE_ME_GMAIL_ADDRESS@gmail.com" \
   "String" \
   "Gmail address for sending transactional emails (order confirmations, password reset)"
 
-# EMAIL_HOST_PASSWORD — SecureString
+# EMAIL_HOST_PASSWORD - SecureString
 # This is a Gmail App Password (16-character code), NOT the Gmail account password.
 # Gmail requires 2FA + App Password for SMTP access. If leaked, attacker can send
 # emails from CampusCart's Gmail account (phishing, spam). KMS-encrypt it.
@@ -819,10 +817,10 @@ put_param \
   "/campuscart/EMAIL_HOST_PASSWORD" \
   "CHANGE_ME_GMAIL_APP_PASSWORD_16CHARS" \
   "SecureString" \
-  "Gmail App Password for SMTP — enable 2FA + App Password in Gmail settings"
+  "Gmail App Password for SMTP - enable 2FA + App Password in Gmail settings"
 
 # ── Stripe Payment Configuration ──────────────────────────────────────────────
-# STRIPE_SECRET_KEY — SecureString
+# STRIPE_SECRET_KEY - SecureString
 # This is the server-side Stripe API key. Anyone with this key can:
 #   - Charge any credit card on file
 #   - Issue refunds
@@ -832,18 +830,18 @@ put_param \
   "/campuscart/STRIPE_SECRET_KEY" \
   "CHANGE_ME_sk_live_STRIPE_SECRET_KEY" \
   "SecureString" \
-  "Stripe secret API key — server-side only, never expose to frontend"
+  "Stripe secret API key - server-side only, never expose to frontend"
 
-# STRIPE_PUBLISHABLE_KEY — String
-# This key IS safe to expose to browsers — it's designed to be public.
+# STRIPE_PUBLISHABLE_KEY - String
+# This key IS safe to expose to browsers - it's designed to be public.
 # Used in frontend JavaScript to tokenize card details (card never hits our server).
 put_param \
   "/campuscart/STRIPE_PUBLISHABLE_KEY" \
   "CHANGE_ME_pk_live_STRIPE_PUBLISHABLE_KEY" \
   "String" \
-  "Stripe publishable key — safe for frontend use"
+  "Stripe publishable key - safe for frontend use"
 
-# STRIPE_WEBHOOK_SECRET — SecureString
+# STRIPE_WEBHOOK_SECRET - SecureString
 # Stripe signs all webhook payloads with this secret using HMAC-SHA256.
 # Django verifies this signature before processing any webhook event.
 # Without this verification, an attacker could POST fake payment confirmations
@@ -852,7 +850,7 @@ put_param \
   "/campuscart/STRIPE_WEBHOOK_SECRET" \
   "CHANGE_ME_whsec_STRIPE_WEBHOOK_SECRET" \
   "SecureString" \
-  "Stripe webhook signing secret — validates webhook payload authenticity"
+  "Stripe webhook signing secret - validates webhook payload authenticity"
 
 # ── VAPID Keys (Web Push Notifications) ───────────────────────────────────────
 # VAPID keys are used for the Web Push Protocol (RFC 8030).
@@ -860,30 +858,30 @@ put_param \
 # Django uses the VAPID private key to sign push notification requests to browser
 # push services (Google FCM, Mozilla, Apple APNs).
 
-# VAPID_PUBLIC_KEY — String (public key is, by definition, shareable)
+# VAPID_PUBLIC_KEY - String (public key is, by definition, shareable)
 put_param \
   "/campuscart/VAPID_PUBLIC_KEY" \
   "CHANGE_ME_VAPID_PUBLIC_KEY_BASE64URL" \
   "String" \
-  "VAPID public key for Web Push — sent to browser during push subscription"
+  "VAPID public key for Web Push - sent to browser during push subscription"
 
-# VAPID_PRIVATE_KEY — SecureString
+# VAPID_PRIVATE_KEY - SecureString
 # The VAPID private key signs push notification requests. If leaked, an attacker
 # could send push notifications to any subscriber of CampusCart.
 put_param \
   "/campuscart/VAPID_PRIVATE_KEY" \
   "CHANGE_ME_VAPID_PRIVATE_KEY_BASE64URL" \
   "SecureString" \
-  "VAPID private key — signs push notification requests to browser push services"
+  "VAPID private key - signs push notification requests to browser push services"
 
-# VAPID_EMAIL — String
-# Required by VAPID spec — contact email for push service operators to reach you
+# VAPID_EMAIL - String
+# Required by VAPID spec - contact email for push service operators to reach you
 # if your push server is misbehaving. Not sensitive.
 put_param \
   "/campuscart/VAPID_EMAIL" \
   "mailto:CHANGE_ME_YOUR_EMAIL@domain.com" \
   "String" \
-  "VAPID contact email — required by Web Push spec (mailto: prefix required)"
+  "VAPID contact email - required by Web Push spec (mailto: prefix required)"
 
 echo ""
 print_ok "All 18 SSM parameters created under /campuscart/*"
@@ -891,34 +889,34 @@ print_info "Parameters with CHANGE_ME_ values MUST be updated before Soldier 6 r
 print_info "See: aws/ssm-params-template.txt for the complete list of what to change"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 7 — IAM USER FOR GITHUB ACTIONS (campuscart-github-actions)
+# STEP 7 - IAM USER FOR GITHUB ACTIONS (campuscart-github-actions)
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # WHAT THIS USER IS FOR:
 # GitHub Actions CI/CD pipeline (Soldier 5) needs to push Docker images to ECR.
-# GitHub Actions runs on GitHub's cloud infrastructure — OUTSIDE AWS. It cannot
+# GitHub Actions runs on GitHub's cloud infrastructure - OUTSIDE AWS. It cannot
 # assume an IAM Role without OIDC configuration (more complex, beyond this project's
 # scope). So we create an IAM User with long-term access keys, and store those
 # keys in GitHub Secrets.
 #
 # NOTE FOR INTERVIEWS: In production at scale, the RIGHT approach is GitHub OIDC
-# with an IAM Role — no long-term credentials at all. This is a known trade-off
+# with an IAM Role - no long-term credentials at all. This is a known trade-off
 # we made for simplicity. Mentioning this shows senior-level awareness.
 #
 # PERMISSIONS FOR THIS USER (LEAST PRIVILEGE):
 # GitHub Actions only needs to PUSH images to ECR. That requires:
-#   1. GetAuthorizationToken — authenticate Docker to ECR (same as above, must be *)
-#   2. BatchCheckLayerAvailability — check which layers already exist (avoid re-uploading)
-#   3. GetDownloadUrlForLayer — required for layer deduplication during push
-#   4. PutImage — actually push the image manifest
-#   5. InitiateLayerUpload — start uploading a new layer
-#   6. UploadLayerPart — upload chunks of a layer
-#   7. CompleteLayerUpload — finalize the layer upload
+#   1. GetAuthorizationToken - authenticate Docker to ECR (same as above, must be *)
+#   2. BatchCheckLayerAvailability - check which layers already exist (avoid re-uploading)
+#   3. GetDownloadUrlForLayer - required for layer deduplication during push
+#   4. PutImage - actually push the image manifest
+#   5. InitiateLayerUpload - start uploading a new layer
+#   6. UploadLayerPart - upload chunks of a layer
+#   7. CompleteLayerUpload - finalize the layer upload
 #
 # WHAT THIS USER CANNOT DO:
-#   - Read SSM parameters (not needed — GitHub Actions never reads secrets from SSM)
-#   - SSH into EC2 (not needed — GitHub Actions SSHes with the EC2 key pair, not IAM)
-#   - Delete ECR images (not needed — old images stay until manually cleaned)
+#   - Read SSM parameters (not needed - GitHub Actions never reads secrets from SSM)
+#   - SSH into EC2 (not needed - GitHub Actions SSHes with the EC2 key pair, not IAM)
+#   - Delete ECR images (not needed - old images stay until manually cleaned)
 #   - Access any other AWS service
 # ═══════════════════════════════════════════════════════════════════════════════
 print_step "7" "IAM USER FOR GITHUB ACTIONS (${GH_USER_NAME})"
@@ -1010,7 +1008,7 @@ print_ok "ECR-push-only policy attached to GitHub Actions user"
 
 # Generate access keys (only if user was just created)
 if [[ "$SKIP_KEY_CREATION" == "false" ]]; then
-  # Create access key — returns AccessKeyId and SecretAccessKey
+  # Create access key - returns AccessKeyId and SecretAccessKey
   # IMPORTANT: SecretAccessKey is shown ONLY ONCE here. It cannot be retrieved again.
   # Must be saved to GitHub Secrets immediately.
   KEY_OUTPUT=$(aws iam create-access-key \
@@ -1023,8 +1021,8 @@ if [[ "$SKIP_KEY_CREATION" == "false" ]]; then
 
   echo ""
   echo -e "${BOLD}${YELLOW}╔══════════════════════════════════════════════════════════════════╗${NC}"
-  echo -e "${BOLD}${YELLOW}║  ⚠  GITHUB ACTIONS CREDENTIALS — SAVE THESE NOW                ║${NC}"
-  echo -e "${BOLD}${YELLOW}║     SecretAccessKey is shown ONLY ONCE — cannot be retrieved    ║${NC}"
+  echo -e "${BOLD}${YELLOW}║  ⚠  GITHUB ACTIONS CREDENTIALS - SAVE THESE NOW                ║${NC}"
+  echo -e "${BOLD}${YELLOW}║     SecretAccessKey is shown ONLY ONCE - cannot be retrieved    ║${NC}"
   echo -e "${BOLD}${YELLOW}╚══════════════════════════════════════════════════════════════════╝${NC}"
   echo ""
   echo -e "  ${BOLD}AWS_ACCESS_KEY_ID${NC}     = ${GREEN}${GH_ACCESS_KEY_ID}${NC}"
@@ -1043,7 +1041,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # FINAL SUMMARY
 # ═══════════════════════════════════════════════════════════════════════════════
-print_banner "SOLDIER 3 MISSION COMPLETE — RESOURCE SUMMARY"
+print_banner "SOLDIER 3 MISSION COMPLETE - RESOURCE SUMMARY"
 
 echo ""
 echo -e "${BOLD}${CYAN}SECURITY GROUP${NC}"
@@ -1093,8 +1091,8 @@ echo -e "    GitHub Secret names: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_
 echo ""
 echo -e "  ${BOLD}Soldier 6 (Execute Everything):${NC}"
 echo -e "    Update CHANGE_ME_ params in SSM before running. See: aws/ssm-params-template.txt"
-echo -e "    Security Group '${SG_NAME}' is ready — ec2-launch.sh will find it by name"
-echo -e "    Instance Profile '${INSTANCE_PROFILE_NAME}' is ready — ec2-launch.sh references it"
+echo -e "    Security Group '${SG_NAME}' is ready - ec2-launch.sh will find it by name"
+echo -e "    Instance Profile '${INSTANCE_PROFILE_NAME}' is ready - ec2-launch.sh references it"
 
 echo ""
 echo -e "${BOLD}${YELLOW}━━━ SSM PARAMETERS REQUIRING REAL VALUES BEFORE DEPLOYMENT ━━━${NC}"
@@ -1129,7 +1127,7 @@ echo ""
 # Run BEFORE vpc-network.sh teardown and ec2-launch.sh teardown.
 # ═══════════════════════════════════════════════════════════════════════════════
 if [[ "${1:-}" == "--teardown" ]]; then
-  print_banner "TEARDOWN MODE — DESTROYING SOLDIER 3 RESOURCES"
+  print_banner "TEARDOWN MODE - DESTROYING SOLDIER 3 RESOURCES"
   print_warn "This will delete: Security Group, IAM Policy, IAM Role, Instance Profile, ECR Repo, SSM Params, IAM User"
   echo ""
   read -p "  Type 'yes' to confirm teardown: " CONFIRM

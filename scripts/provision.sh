@@ -132,7 +132,8 @@ log "Internet connectivity: ✓"
 # If IMDS doesn't respond, the EC2 has no IAM identity and cannot call AWS APIs.
 # 169.254.169.254 is the Instance Metadata Service — only reachable from within EC2.
 log "Checking IAM Instance Profile via IMDS..."
-if ! curl -s --max-time 3 http://169.254.169.254/latest/meta-data/iam/info > /dev/null; then
+IMDS_TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" --max-time 3)
+if ! curl -s --max-time 3 -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/iam/info > /dev/null; then
   fail "IMDS not responding. Ensure an IAM Instance Profile is attached to this EC2."
 fi
 log "IAM Instance Profile: attached ✓"
@@ -569,7 +570,8 @@ log ".env created with ${ENV_LINE_COUNT} parameters, permissions: $(stat -c '%a'
 section "STEP 7: Detecting EC2 public IP and setting ALLOWED_HOSTS"
 
 log "Querying IMDS for public IPv4 address..."
-EC2_PUBLIC_IP=$(curl -s --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4)
+IMDS_TOKEN2=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" --max-time 3)
+EC2_PUBLIC_IP=$(curl -s --max-time 5 -H "X-aws-ec2-metadata-token: $IMDS_TOKEN2" http://169.254.169.254/latest/meta-data/public-ipv4)
 # curl -s: Silent mode — no progress bar
 # --max-time 5: Fail after 5 seconds if IMDS doesn't respond
 # This returns just the IP address as plain text: "13.126.123.45"

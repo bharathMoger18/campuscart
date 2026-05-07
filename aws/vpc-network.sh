@@ -1,23 +1,23 @@
 #!/bin/bash
 
 # =============================================================================
-# CampusCart — AWS Infrastructure Setup Script
+# CampusCart - AWS Infrastructure Setup Script
 # =============================================================================
 # Soldier  : 2
 # Mission  : VPC + Networking + EC2
 # Executed : Soldier 6 runs this ONCE on a clean AWS account
-# Region   : ap-south-1 (Mumbai) — closest to Bangalore
+# Region   : ap-south-1 (Mumbai) - closest to Bangalore
 # Author   : Soldier 2
 #
 # WHAT THIS SCRIPT CREATES (in order):
 #   1. VPC                 (10.0.0.0/16)
-#   2. Public Subnet 1     (10.0.1.0/24 — ap-south-1a) ← EC2 lives here
-#   3. Public Subnet 2     (10.0.2.0/24 — ap-south-1b)
-#   4. Private Subnet 1    (10.0.3.0/24 — ap-south-1a)
-#   5. Private Subnet 2    (10.0.4.0/24 — ap-south-1b)
+#   2. Public Subnet 1     (10.0.1.0/24 - ap-south-1a) ← EC2 lives here
+#   3. Public Subnet 2     (10.0.2.0/24 - ap-south-1b)
+#   4. Private Subnet 1    (10.0.3.0/24 - ap-south-1a)
+#   5. Private Subnet 2    (10.0.4.0/24 - ap-south-1b)
 #   6. Internet Gateway    (attached to VPC)
 #   7. Public Route Table  (0.0.0.0/0 → IGW)
-#   8. Private Route Table (local only — no internet)
+#   8. Private Route Table (local only - no internet)
 #   9. Key Pair            (saved to ~/campuscart-key.pem)
 #  10. EC2 Instance        (Ubuntu 22.04 LTS, t2.micro, Public Subnet 1)
 #  11. Elastic IP          (allocated + associated with EC2)
@@ -35,11 +35,11 @@
 #   - Verify with: aws sts get-caller-identity
 # =============================================================================
 
-set -e  # Exit immediately if any command fails — no silent errors
+set -e  # Exit immediately if any command fails - no silent errors
 set -o pipefail  # Catch errors in pipes too
 
 # =============================================================================
-# COLORS — for readable terminal output
+# COLORS - for readable terminal output
 # =============================================================================
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -53,7 +53,7 @@ RESET='\033[0m'
 # HELPER FUNCTIONS
 # =============================================================================
 
-# Print a section header — makes terminal output readable
+# Print a section header - makes terminal output readable
 section() {
     echo ""
     echo -e "${CYAN}${BOLD}══════════════════════════════════════════${RESET}"
@@ -77,24 +77,24 @@ warn() {
 }
 
 # =============================================================================
-# CONFIGURATION — all values defined here, commands reference these variables
+# CONFIGURATION - all values defined here, commands reference these variables
 # Never hardcode values inside commands
 # =============================================================================
 
-REGION="ap-south-1"                    # Mumbai — closest AWS region to Bangalore
+REGION="ap-south-1"                    # Mumbai - closest AWS region to Bangalore
 
 VPC_CIDR="10.0.0.0/16"                # /16 = 65,536 IPs for the entire VPC
 
-PUB_SUBNET_1_CIDR="10.0.1.0/24"      # Public Subnet 1 — EC2 lives here
-PUB_SUBNET_1_AZ="ap-south-1a"        # AZ 1 — active AZ
+PUB_SUBNET_1_CIDR="10.0.1.0/24"      # Public Subnet 1 - EC2 lives here
+PUB_SUBNET_1_AZ="ap-south-1a"        # AZ 1 - active AZ
 
-PUB_SUBNET_2_CIDR="10.0.2.0/24"      # Public Subnet 2 — reserved for future LB
-PUB_SUBNET_2_AZ="ap-south-1b"        # AZ 2 — second AZ for HA design
+PUB_SUBNET_2_CIDR="10.0.2.0/24"      # Public Subnet 2 - reserved for future LB
+PUB_SUBNET_2_AZ="ap-south-1b"        # AZ 2 - second AZ for HA design
 
-PRIV_SUBNET_1_CIDR="10.0.3.0/24"     # Private Subnet 1 — reserved for future RDS
+PRIV_SUBNET_1_CIDR="10.0.3.0/24"     # Private Subnet 1 - reserved for future RDS
 PRIV_SUBNET_1_AZ="ap-south-1a"       # Same AZ as Public Subnet 1
 
-PRIV_SUBNET_2_CIDR="10.0.4.0/24"     # Private Subnet 2 — reserved for future RDS
+PRIV_SUBNET_2_CIDR="10.0.4.0/24"     # Private Subnet 2 - reserved for future RDS
 PRIV_SUBNET_2_AZ="ap-south-1b"       # Same AZ as Public Subnet 2
 
 KEY_NAME="campuscart-key"             # SSH key pair name
@@ -102,11 +102,11 @@ KEY_FILE="$HOME/campuscart-key.pem"   # Where to save the private key locally
 
 # Ubuntu 22.04 LTS AMI ID for ap-south-1 (Mumbai)
 # This is the official Canonical Ubuntu AMI as of 2025
-# LTS = Long Term Support — security updates until April 2027
+# LTS = Long Term Support - security updates until April 2027
 # IMPORTANT: AMI IDs are region-specific. This ID only works in ap-south-1
 AMI_ID="ami-0f58b397bc5c1f2e8"
 
-INSTANCE_TYPE="t2.micro"              # 1 vCPU, 1GB RAM — free tier eligible
+INSTANCE_TYPE="t2.micro"              # 1 vCPU, 1GB RAM - free tier eligible
 
 # =============================================================================
 # SCRIPT START
@@ -115,7 +115,7 @@ INSTANCE_TYPE="t2.micro"              # 1 vCPU, 1GB RAM — free tier eligible
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════╗${RESET}"
 echo -e "${BOLD}║   CampusCart AWS Infrastructure Setup        ║${RESET}"
-echo -e "${BOLD}║   Soldier 2 — VPC + Networking + EC2         ║${RESET}"
+echo -e "${BOLD}║   Soldier 2 - VPC + Networking + EC2         ║${RESET}"
 echo -e "${BOLD}╚══════════════════════════════════════════════╝${RESET}"
 echo ""
 
@@ -126,7 +126,7 @@ if [ -z "$CALLER" ]; then
     echo -e "${RED}ERROR: AWS CLI not configured. Run 'aws configure' first.${RESET}"
     exit 1
 fi
-ok "AWS CLI working — Identity: $CALLER"
+ok "AWS CLI working - Identity: $CALLER"
 
 # Verify we are in the correct region
 CONFIGURED_REGION=$(aws configure get region)
@@ -138,16 +138,16 @@ fi
 ok "Region verified: $REGION"
 
 # =============================================================================
-# STEP 1 — CREATE VPC
+# STEP 1 - CREATE VPC
 # =============================================================================
 # A VPC (Virtual Private Cloud) is our private isolated network inside AWS.
 # CIDR 10.0.0.0/16 gives us 65,536 IP addresses.
-# 10.x.x.x is RFC 1918 private address space — not publicly routable.
+# 10.x.x.x is RFC 1918 private address space - not publicly routable.
 # DNS hostnames: lets EC2 instances get human-readable DNS names inside VPC.
 # DNS resolution: enables the VPC's internal DNS resolver (at base+2 address).
 # =============================================================================
 
-section "STEP 1 — Creating VPC"
+section "STEP 1 - Creating VPC"
 
 # Create the VPC with our CIDR block and tags
 # --query extracts just the VPC ID from the JSON response
@@ -166,7 +166,7 @@ VPC_ID=$(aws ec2 create-vpc \
 
 ok "VPC created: $VPC_ID"
 
-# Enable DNS hostnames — allows EC2 instances in this VPC to get
+# Enable DNS hostnames - allows EC2 instances in this VPC to get
 # public DNS names like ec2-x-x-x-x.ap-south-1.compute.amazonaws.com
 # Required for some AWS services and good practice in general
 aws ec2 modify-vpc-attribute \
@@ -176,7 +176,7 @@ aws ec2 modify-vpc-attribute \
 
 ok "DNS hostnames enabled on VPC"
 
-# Enable DNS resolution — enables the VPC's internal DNS server
+# Enable DNS resolution - enables the VPC's internal DNS server
 # (always at base CIDR + 2, i.e. 10.0.0.2 for our VPC)
 # This lets instances resolve both AWS internal names and public DNS
 aws ec2 modify-vpc-attribute \
@@ -187,7 +187,7 @@ aws ec2 modify-vpc-attribute \
 ok "DNS resolution enabled on VPC"
 
 # =============================================================================
-# STEP 2 — CREATE SUBNETS
+# STEP 2 - CREATE SUBNETS
 # =============================================================================
 # Subnets divide the VPC into smaller network segments.
 # Public subnets: have a route to the Internet Gateway → EC2/LB go here
@@ -196,7 +196,7 @@ ok "DNS resolution enabled on VPC"
 # Each /24 gives 256 IPs total, 251 usable (AWS reserves 5 per subnet).
 # =============================================================================
 
-section "STEP 2 — Creating Subnets"
+section "STEP 2 - Creating Subnets"
 
 # ── PUBLIC SUBNET 1 (ap-south-1a) ──
 # This is where our EC2 instance lives.
@@ -216,7 +216,7 @@ PUB_SUBNET_1_ID=$(aws ec2 create-subnet \
     --query 'Subnet.SubnetId' \
     --output text)
 
-ok "Public Subnet 1 created: $PUB_SUBNET_1_ID ($PUB_SUBNET_1_CIDR — $PUB_SUBNET_1_AZ)"
+ok "Public Subnet 1 created: $PUB_SUBNET_1_ID ($PUB_SUBNET_1_CIDR - $PUB_SUBNET_1_AZ)"
 
 # Enable auto-assign public IP on Public Subnet 1
 # Any EC2 launched in this subnet automatically gets a public IP.
@@ -247,7 +247,7 @@ PUB_SUBNET_2_ID=$(aws ec2 create-subnet \
     --query 'Subnet.SubnetId' \
     --output text)
 
-ok "Public Subnet 2 created: $PUB_SUBNET_2_ID ($PUB_SUBNET_2_CIDR — $PUB_SUBNET_2_AZ)"
+ok "Public Subnet 2 created: $PUB_SUBNET_2_ID ($PUB_SUBNET_2_CIDR - $PUB_SUBNET_2_AZ)"
 
 # Enable auto-assign public IP on Public Subnet 2 as well
 aws ec2 modify-subnet-attribute \
@@ -259,7 +259,7 @@ ok "Auto-assign public IP enabled on Public Subnet 2"
 
 # ── PRIVATE SUBNET 1 (ap-south-1a) ──
 # Reserved for future RDS (PostgreSQL managed) in ap-south-1a.
-# No internet route will be associated — completely isolated from internet.
+# No internet route will be associated - completely isolated from internet.
 # Resources here can only be reached from within the VPC.
 PRIV_SUBNET_1_ID=$(aws ec2 create-subnet \
     --vpc-id "$VPC_ID" \
@@ -276,11 +276,11 @@ PRIV_SUBNET_1_ID=$(aws ec2 create-subnet \
     --query 'Subnet.SubnetId' \
     --output text)
 
-ok "Private Subnet 1 created: $PRIV_SUBNET_1_ID ($PRIV_SUBNET_1_CIDR — $PRIV_SUBNET_1_AZ)"
+ok "Private Subnet 1 created: $PRIV_SUBNET_1_ID ($PRIV_SUBNET_1_CIDR - $PRIV_SUBNET_1_AZ)"
 
 # ── PRIVATE SUBNET 2 (ap-south-1b) ──
 # Reserved for future RDS replica in ap-south-1b (multi-AZ RDS standby).
-# Same — no internet route, completely private.
+# Same - no internet route, completely private.
 PRIV_SUBNET_2_ID=$(aws ec2 create-subnet \
     --vpc-id "$VPC_ID" \
     --cidr-block "$PRIV_SUBNET_2_CIDR" \
@@ -296,22 +296,22 @@ PRIV_SUBNET_2_ID=$(aws ec2 create-subnet \
     --query 'Subnet.SubnetId' \
     --output text)
 
-ok "Private Subnet 2 created: $PRIV_SUBNET_2_ID ($PRIV_SUBNET_2_CIDR — $PRIV_SUBNET_2_AZ)"
+ok "Private Subnet 2 created: $PRIV_SUBNET_2_ID ($PRIV_SUBNET_2_CIDR - $PRIV_SUBNET_2_AZ)"
 
 # =============================================================================
-# STEP 3 — CREATE AND ATTACH INTERNET GATEWAY
+# STEP 3 - CREATE AND ATTACH INTERNET GATEWAY
 # =============================================================================
 # The Internet Gateway (IGW) is the bridge between our VPC and the internet.
-# Without it, the VPC is completely sealed — no inbound or outbound internet.
-# One IGW per VPC — AWS hard limit.
+# Without it, the VPC is completely sealed - no inbound or outbound internet.
+# One IGW per VPC - AWS hard limit.
 # The IGW performs 1:1 NAT: maps Elastic IP ↔ EC2 private IP at network level.
-# It is fully managed by AWS — no maintenance, no HA concern, no hourly cost.
+# It is fully managed by AWS - no maintenance, no HA concern, no hourly cost.
 # =============================================================================
 
-section "STEP 3 — Creating Internet Gateway"
+section "STEP 3 - Creating Internet Gateway"
 
 # Create the Internet Gateway
-# It starts in a "detached" state — must be explicitly attached to a VPC
+# It starts in a "detached" state - must be explicitly attached to a VPC
 IGW_ID=$(aws ec2 create-internet-gateway \
     --region "$REGION" \
     --tag-specifications "ResourceType=internet-gateway,Tags=[
@@ -336,16 +336,16 @@ aws ec2 attach-internet-gateway \
 ok "Internet Gateway attached to VPC ($VPC_ID)"
 
 # =============================================================================
-# STEP 4 — CREATE ROUTE TABLES AND ASSOCIATE SUBNETS
+# STEP 4 - CREATE ROUTE TABLES AND ASSOCIATE SUBNETS
 # =============================================================================
 # Route tables decide where network packets go.
 # Every subnet must be associated with exactly one route table.
-# Public RT:  has 0.0.0.0/0 → IGW — this is what makes a subnet "public"
-# Private RT: has only local route — no internet — this makes it "private"
+# Public RT:  has 0.0.0.0/0 → IGW - this is what makes a subnet "public"
+# Private RT: has only local route - no internet - this makes it "private"
 # The local route (10.0.0.0/16 → local) is automatically added to every RT.
 # =============================================================================
 
-section "STEP 4 — Creating Route Tables"
+section "STEP 4 - Creating Route Tables"
 
 # ── PUBLIC ROUTE TABLE ──
 # This route table will be associated with both public subnets.
@@ -388,7 +388,7 @@ aws ec2 associate-route-table \
 ok "Public Subnet 1 associated with Public Route Table"
 
 # Associate Public Subnet 2 with the Public Route Table
-# Both public subnets share the same route table — both get internet access
+# Both public subnets share the same route table - both get internet access
 aws ec2 associate-route-table \
     --route-table-id "$PUB_RT_ID" \
     --subnet-id "$PUB_SUBNET_2_ID" \
@@ -398,7 +398,7 @@ aws ec2 associate-route-table \
 ok "Public Subnet 2 associated with Public Route Table"
 
 # ── PRIVATE ROUTE TABLE ──
-# This route table has NO internet route — only the auto-added local route.
+# This route table has NO internet route - only the auto-added local route.
 # Local route (10.0.0.0/16 → local) is added automatically by AWS.
 # Resources in private subnets can only communicate within the VPC.
 # Internet cannot initiate connections to them. They cannot call the internet.
@@ -436,20 +436,20 @@ aws ec2 associate-route-table \
 ok "Private Subnet 2 associated with Private Route Table"
 
 # =============================================================================
-# STEP 5 — CREATE KEY PAIR
+# STEP 5 - CREATE KEY PAIR
 # =============================================================================
 # SSH key pairs use asymmetric cryptography (RSA).
 # AWS generates the key pair and gives us the private key ONCE.
 # AWS stores the public key on EC2 in ~/.ssh/authorized_keys.
 # We store the private key in campuscart-key.pem on our machine.
 # If the .pem file is lost, we lose SSH access to the EC2 permanently.
-# chmod 400 = read-only for owner — SSH refuses keys with looser permissions.
+# chmod 400 = read-only for owner - SSH refuses keys with looser permissions.
 # NEVER commit this file to Git. It is already in .gitignore.
 # =============================================================================
 
-section "STEP 5 — Creating Key Pair"
+section "STEP 5 - Creating Key Pair"
 
-# Check if key pair already exists — avoid duplicate creation error
+# Check if key pair already exists - avoid duplicate creation error
 EXISTING_KEY=$(aws ec2 describe-key-pairs \
     --key-names "$KEY_NAME" \
     --region "$REGION" \
@@ -472,7 +472,7 @@ if [ "$EXISTING_KEY" = "$KEY_NAME" ]; then
 else
     # Create the key pair
     # --query extracts the private key material from the JSON response
-    # The private key is ONLY returned at creation time — never again
+    # The private key is ONLY returned at creation time - never again
     aws ec2 create-key-pair \
         --key-name "$KEY_NAME" \
         --region "$REGION" \
@@ -496,17 +496,17 @@ else
 fi
 
 # =============================================================================
-# STEP 6 — LAUNCH EC2 INSTANCE
+# STEP 6 - LAUNCH EC2 INSTANCE
 # =============================================================================
-# EC2 = Elastic Compute Cloud — a virtual machine running on AWS hardware.
+# EC2 = Elastic Compute Cloud - a virtual machine running on AWS hardware.
 # AMI: Ubuntu 22.04 LTS (official Canonical image for ap-south-1)
-#   - LTS = Long Term Support — security updates until April 2027
-#   - Same OS Bharath uses locally — zero environment mismatch
-# t2.micro: 1 vCPU, 1GB RAM — free tier eligible
-# Placed in Public Subnet 1 (ap-south-1a) — must be internet-reachable.
-# Key pair attached — only campuscart-key.pem can SSH in.
-# EBS volume: 20GB gp3 — gp3 is newer, faster, cheaper than gp2.
-# delete-on-termination=true — EBS deleted when instance is terminated.
+#   - LTS = Long Term Support - security updates until April 2027
+#   - Same OS Bharath uses locally - zero environment mismatch
+# t2.micro: 1 vCPU, 1GB RAM - free tier eligible
+# Placed in Public Subnet 1 (ap-south-1a) - must be internet-reachable.
+# Key pair attached - only campuscart-key.pem can SSH in.
+# EBS volume: 20GB gp3 - gp3 is newer, faster, cheaper than gp2.
+# delete-on-termination=true - EBS deleted when instance is terminated.
 #   Change to false if you want to preserve data after termination.
 #
 # NOTE: Security Group is created by Soldier 3.
@@ -515,7 +515,7 @@ fi
 #       Soldier 6: replace SECURITY_GROUP_ID below with the real SG ID.
 # =============================================================================
 
-section "STEP 6 — Launching EC2 Instance"
+section "STEP 6 - Launching EC2 Instance"
 
 # ── IMPORTANT: Soldier 3 creates the Security Group ──
 # Soldier 6: Run this after Soldier 3's script has created the SG.
@@ -524,7 +524,7 @@ section "STEP 6 — Launching EC2 Instance"
 
 warn "Fetching Security Group created by Soldier 3..."
 
-# Fetch the Security Group ID by name — Soldier 3 tags it as campuscart-sg
+# Fetch the Security Group ID by name - Soldier 3 tags it as campuscart-sg
 SECURITY_GROUP_ID=$(aws ec2 describe-security-groups \
     --filters \
         "Name=group-name,Values=campuscart-sg" \
@@ -546,7 +546,7 @@ ok "Security Group found: $SECURITY_GROUP_ID"
 # Launch the EC2 instance
 # --image-id: Ubuntu 22.04 LTS AMI for ap-south-1
 # --instance-type: t2.micro (1 vCPU, 1GB RAM, free tier)
-# --subnet-id: Public Subnet 1 — EC2 must be in a public subnet
+# --subnet-id: Public Subnet 1 - EC2 must be in a public subnet
 # --key-name: the SSH key pair we just created
 # --security-group-ids: Soldier 3's security group
 # --block-device-mappings: 20GB gp3 EBS root volume
@@ -605,19 +605,19 @@ PRIVATE_IP=$(aws ec2 describe-instances \
 ok "EC2 Private IP: $PRIVATE_IP"
 
 # =============================================================================
-# STEP 7 — ALLOCATE AND ASSOCIATE ELASTIC IP
+# STEP 7 - ALLOCATE AND ASSOCIATE ELASTIC IP
 # =============================================================================
 # Elastic IP = static public IPv4 address that belongs to our AWS account.
 # Problem without EIP: every EC2 stop/start assigns a new public IP.
 #   This would break DNS, GitHub Actions SSH, and Stripe webhooks.
 # Elastic IP is FREE when attached to a running instance.
 # Charged ~$0.005/hour when allocated but NOT attached to running instance.
-# IMPORTANT for Soldier 6 teardown: RELEASE the EIP — don't just disassociate.
+# IMPORTANT for Soldier 6 teardown: RELEASE the EIP - don't just disassociate.
 # How it works: IGW maintains 1:1 NAT mapping Elastic IP ↔ EC2 private IP.
-# Inside the EC2, ifconfig shows only the private IP — EIP is at IGW level.
+# Inside the EC2, ifconfig shows only the private IP - EIP is at IGW level.
 # =============================================================================
 
-section "STEP 7 — Allocating and Associating Elastic IP"
+section "STEP 7 - Allocating and Associating Elastic IP"
 
 # Allocate an Elastic IP from Amazon's pool
 # --domain vpc: required for VPC-based instances (vs EC2-Classic which is retired)
@@ -646,7 +646,7 @@ ok "Elastic IP address: $ELASTIC_IP"
 
 # Associate the Elastic IP with our EC2 instance
 # After this, all traffic to ELASTIC_IP is routed to our EC2's private IP
-# This association survives EC2 stop/start — the IP stays fixed
+# This association survives EC2 stop/start - the IP stays fixed
 aws ec2 associate-address \
     --instance-id "$INSTANCE_ID" \
     --allocation-id "$ALLOCATION_ID" \
@@ -656,12 +656,12 @@ aws ec2 associate-address \
 ok "Elastic IP $ELASTIC_IP associated with EC2 $INSTANCE_ID"
 
 # =============================================================================
-# SUMMARY — Print all created resource IDs
+# SUMMARY - Print all created resource IDs
 # =============================================================================
 # This output should be copied into infrastructure.md by Soldier 6
 # =============================================================================
 
-section "INFRASTRUCTURE SUMMARY — Copy to infrastructure.md"
+section "INFRASTRUCTURE SUMMARY - Copy to infrastructure.md"
 
 echo ""
 echo -e "  ${BOLD}Region:${RESET}              $REGION"
@@ -671,10 +671,10 @@ echo -e "    VPC ID:            $VPC_ID"
 echo -e "    CIDR:              $VPC_CIDR"
 echo ""
 echo -e "  ${BOLD}Subnets:${RESET}"
-echo -e "    Public Subnet 1:   $PUB_SUBNET_1_ID ($PUB_SUBNET_1_CIDR — $PUB_SUBNET_1_AZ)"
-echo -e "    Public Subnet 2:   $PUB_SUBNET_2_ID ($PUB_SUBNET_2_CIDR — $PUB_SUBNET_2_AZ)"
-echo -e "    Private Subnet 1:  $PRIV_SUBNET_1_ID ($PRIV_SUBNET_1_CIDR — $PRIV_SUBNET_1_AZ)"
-echo -e "    Private Subnet 2:  $PRIV_SUBNET_2_ID ($PRIV_SUBNET_2_CIDR — $PRIV_SUBNET_2_AZ)"
+echo -e "    Public Subnet 1:   $PUB_SUBNET_1_ID ($PUB_SUBNET_1_CIDR - $PUB_SUBNET_1_AZ)"
+echo -e "    Public Subnet 2:   $PUB_SUBNET_2_ID ($PUB_SUBNET_2_CIDR - $PUB_SUBNET_2_AZ)"
+echo -e "    Private Subnet 1:  $PRIV_SUBNET_1_ID ($PRIV_SUBNET_1_CIDR - $PRIV_SUBNET_1_AZ)"
+echo -e "    Private Subnet 2:  $PRIV_SUBNET_2_ID ($PRIV_SUBNET_2_CIDR - $PRIV_SUBNET_2_AZ)"
 echo ""
 echo -e "  ${BOLD}Internet Gateway:${RESET}"
 echo -e "    IGW ID:            $IGW_ID"
@@ -692,7 +692,7 @@ echo -e "    Instance ID:       $INSTANCE_ID"
 echo -e "    Instance Type:     $INSTANCE_TYPE"
 echo -e "    AMI:               $AMI_ID (Ubuntu 22.04 LTS)"
 echo -e "    Private IP:        $PRIVATE_IP"
-echo -e "    Subnet:            $PUB_SUBNET_1_ID (Public Subnet 1 — $PUB_SUBNET_1_AZ)"
+echo -e "    Subnet:            $PUB_SUBNET_1_ID (Public Subnet 1 - $PUB_SUBNET_1_AZ)"
 echo -e "    Security Group:    $SECURITY_GROUP_ID"
 echo ""
 echo -e "  ${BOLD}Elastic IP:${RESET}"
@@ -701,7 +701,7 @@ echo -e "    Public IP:         $ELASTIC_IP"
 echo ""
 
 # =============================================================================
-# SSH COMMAND — How to connect to the EC2
+# SSH COMMAND - How to connect to the EC2
 # =============================================================================
 
 section "SSH ACCESS"
@@ -718,13 +718,13 @@ echo -e "  → chmod 400 already applied to $KEY_FILE"
 echo ""
 
 # =============================================================================
-# TEARDOWN REMINDER — For Soldier 6
+# TEARDOWN REMINDER - For Soldier 6
 # =============================================================================
 
 section "TEARDOWN REMINDER FOR SOLDIER 6"
 
 echo ""
-echo -e "  ${RED}${BOLD}When tearing down — follow this EXACT ORDER:${RESET}"
+echo -e "  ${RED}${BOLD}When tearing down - follow this EXACT ORDER:${RESET}"
 echo ""
 echo -e "  ${YELLOW}1.${RESET} Disassociate + RELEASE Elastic IP (not just disassociate)"
 echo -e "     ${CYAN}aws ec2 disassociate-address --association-id <assoc-id>${RESET}"
@@ -752,7 +752,7 @@ echo ""
 echo -e "  ${YELLOW}7.${RESET} Delete VPC"
 echo -e "     ${CYAN}aws ec2 delete-vpc --vpc-id $VPC_ID${RESET}"
 echo ""
-echo -e "  ${YELLOW}8.${RESET} Delete Key Pair from AWS (optional — keep .pem locally)"
+echo -e "  ${YELLOW}8.${RESET} Delete Key Pair from AWS (optional - keep .pem locally)"
 echo -e "     ${CYAN}aws ec2 delete-key-pair --key-name $KEY_NAME${RESET}"
 echo ""
 echo -e "  ${RED}WHY ORDER MATTERS:${RESET} AWS will refuse to delete a VPC"

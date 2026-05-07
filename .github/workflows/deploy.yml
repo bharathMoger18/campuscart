@@ -292,7 +292,6 @@ jobs:
         run: |
           docker build \
             -t $ECR_REGISTRY/${{ secrets.ECR_REPO_NAME }}:$IMAGE_TAG \
-            -t $ECR_REGISTRY/${{ secrets.ECR_REPO_NAME }}:latest \
             ./campuscart-backend
           # docker build flags explained:
           #
@@ -349,7 +348,7 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker push $ECR_REGISTRY/${{ secrets.ECR_REPO_NAME }}:$IMAGE_TAG
-          docker push $ECR_REGISTRY/${{ secrets.ECR_REPO_NAME }}:latest
+          
           # Push the SHA-tagged image first — this is the primary tag.
           # deploy.sh will reference this exact SHA when pulling.
           #

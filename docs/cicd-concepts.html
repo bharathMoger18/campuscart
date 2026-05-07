@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CI/CD Concepts — CampusCart DevOps</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #0a0d14;
+    --bg2:     #0f1420;
+    --bg3:     #141928;
+    --panel:   #161c2e;
+    --border:  #1e2a42;
+    --border2: #253352;
+    --accent:  #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --text:    #e2e8f0;
+    --text2:   #94a3b8;
+    --text3:   #64748b;
+    --mono:    'JetBrains Mono', monospace;
+    --sans:    'Syne', sans-serif;
+    --body:    'Inter', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.7;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar { position: fixed; top: 0; left: 0; right: 0; height: 2px; background: var(--border); z-index: 999; }
+  #progress { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3)); width: 0%; transition: width 0.1s; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 280px; min-width: 280px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    position: fixed; top: 0; left: 0; bottom: 0;
+    overflow-y: auto; z-index: 100;
+    display: flex; flex-direction: column;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .sidebar-brand { padding: 28px 24px 20px; border-bottom: 1px solid var(--border); }
+  .sidebar-brand .tag { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  .sidebar-brand h1 { font-family: var(--sans); font-size: 17px; font-weight: 800; color: var(--text); line-height: 1.3; }
+  .sidebar-brand .sub { font-size: 11px; color: var(--text3); margin-top: 4px; font-family: var(--mono); }
+
+  .sidebar-nav { padding: 16px 0; flex: 1; }
+  .nav-section-label { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); padding: 12px 24px 6px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 24px;
+    color: var(--text2); text-decoration: none;
+    font-size: 13px; font-family: var(--body);
+    transition: all 0.2s;
+    border-left: 2px solid transparent; cursor: pointer;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(0,212,255,0.05); border-left-color: var(--accent); }
+  .nav-item.active { color: var(--accent); background: rgba(0,212,255,0.08); border-left-color: var(--accent); }
+  .nav-item .num { font-family: var(--mono); font-size: 10px; color: var(--text3); min-width: 24px; }
+  .nav-item.active .num { color: var(--accent); }
+  .nav-item.qa-link:hover { border-left-color: var(--accent2); }
+  .nav-item.qa-link.active { color: var(--accent2); background: rgba(124,58,237,0.08); border-left-color: var(--accent2); }
+
+  .sidebar-footer { padding: 16px 24px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: 10px; color: var(--text3); }
+  .soldier-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 10px; color: var(--accent); font-family: var(--mono); margin-top: 8px; }
+
+  /* ── MAIN ── */
+  .main { margin-left: 280px; flex: 1; min-height: 100vh; }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 60px 64px 50px; position: relative; overflow: hidden;
+  }
+  .hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%); pointer-events: none; }
+  .hero::after  { content: ''; position: absolute; bottom: -80px; left: 200px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 70%); pointer-events: none; }
+
+  .hero-eyebrow { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .hero-eyebrow::before { content: ''; display: inline-block; width: 30px; height: 1px; background: var(--accent); }
+  .hero h1 { font-family: var(--sans); font-size: 46px; font-weight: 800; line-height: 1.1; margin-bottom: 16px; background: linear-gradient(135deg, #e2e8f0 0%, #00d4ff 50%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-desc { font-size: 16px; color: var(--text2); max-width: 620px; line-height: 1.6; margin-bottom: 28px; }
+  .hero-stats { display: flex; gap: 32px; flex-wrap: wrap; }
+  .hero-stat { display: flex; flex-direction: column; gap: 4px; }
+  .hero-stat .val { font-family: var(--sans); font-size: 28px; font-weight: 800; color: var(--accent); }
+  .hero-stat .lbl { font-size: 12px; color: var(--text3); font-family: var(--mono); letter-spacing: 1px; text-transform: uppercase; }
+
+  /* ── CONTENT ── */
+  .content { padding: 0 64px 80px; }
+
+  /* ── CONCEPT SECTION ── */
+  .concept-section {
+    padding: 56px 0 48px; border-bottom: 1px solid var(--border);
+  }
+
+  .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.5s, transform 0.5s; }
+  .fade-in.visible { opacity: 1; transform: none; }
+
+  .section-header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 36px; }
+  .section-num { font-family: var(--mono); font-size: 11px; color: var(--accent); background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.15); padding: 6px 12px; border-radius: 6px; white-space: nowrap; margin-top: 4px; }
+  .section-title-block h2 { font-family: var(--sans); font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .section-sub { font-size: 13px; color: var(--text3); font-family: var(--mono); }
+
+  /* ── TEACH BLOCKS ── */
+  .teach-block { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 20px; position: relative; }
+  .teach-block.highlight { border-color: rgba(0,212,255,0.2); background: linear-gradient(135deg, rgba(0,212,255,0.03) 0%, var(--panel) 100%); }
+  .teach-block.warning   { border-color: rgba(245,158,11,0.25); background: linear-gradient(135deg, rgba(245,158,11,0.04) 0%, var(--panel) 100%); }
+  .teach-block.danger    { border-color: rgba(239,68,68,0.25); background: linear-gradient(135deg, rgba(239,68,68,0.04) 0%, var(--panel) 100%); }
+  .teach-block.success   { border-color: rgba(16,185,129,0.25); background: linear-gradient(135deg, rgba(16,185,129,0.04) 0%, var(--panel) 100%); }
+  .teach-block.purple    { border-color: rgba(124,58,237,0.25); background: linear-gradient(135deg, rgba(124,58,237,0.04) 0%, var(--panel) 100%); }
+
+  .teach-block h3 { font-family: var(--sans); font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .teach-block h3 .icon { font-size: 18px; }
+  .teach-block p { color: var(--text2); margin-bottom: 10px; }
+  .teach-block p:last-child { margin-bottom: 0; }
+  .teach-block ul, .teach-block ol { color: var(--text2); padding-left: 20px; margin-bottom: 10px; }
+  .teach-block li { margin-bottom: 6px; }
+  .teach-block strong { color: var(--text); }
+
+  /* ── CODE BLOCKS ── */
+  .code-block { background: #0a0d14; border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin: 16px 0; }
+  .code-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); }
+  .code-lang { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+  .code-body { padding: 18px 20px; overflow-x: auto; }
+  .code-body pre { font-family: var(--mono); font-size: 13px; line-height: 1.6; color: var(--text2); white-space: pre; }
+  .code-body .comment { color: var(--text3); }
+  .code-body .keyword { color: var(--accent); }
+  .code-body .string  { color: var(--accent3); }
+  .code-body .value   { color: var(--accent4); }
+  .code-body .special { color: var(--accent2); }
+
+  /* ── PIPELINE DIAGRAM ── */
+  .pipeline { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 24px 0; }
+  .pipe-step { background: var(--panel); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 18px; text-align: center; min-width: 110px; }
+  .pipe-step .p-icon { font-size: 22px; margin-bottom: 6px; }
+  .pipe-step .p-label { font-family: var(--mono); font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+  .pipe-step .p-desc { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .pipe-arrow { font-size: 20px; color: var(--accent); padding: 0 8px; }
+
+  /* ── COMPARISON TABLE ── */
+  .compare-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  .compare-table th { background: rgba(0,212,255,0.06); color: var(--accent); font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; border: 1px solid var(--border2); }
+  .compare-table td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+  .compare-table tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+  .compare-table .good { color: var(--accent3); font-family: var(--mono); font-size: 12px; }
+  .compare-table .bad  { color: var(--accent5); font-family: var(--mono); font-size: 12px; }
+
+  /* ── TWO COLUMN ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── TREE DIAGRAM ── */
+  .tree-block { background: #0a0d14; border: 1px solid var(--border2); border-radius: 8px; padding: 20px 24px; margin: 16px 0; font-family: var(--mono); font-size: 13px; color: var(--text2); line-height: 1.8; }
+  .tree-block .t-root   { color: var(--accent); }
+  .tree-block .t-job    { color: var(--accent2); }
+  .tree-block .t-step   { color: var(--accent3); }
+  .tree-block .t-detail { color: var(--text3); }
+
+  /* ── TAGS ── */
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .tag { font-family: var(--mono); font-size: 11px; padding: 4px 10px; border-radius: 20px; }
+  .tag.blue   { background: rgba(0,212,255,0.1);   color: var(--accent);  border: 1px solid rgba(0,212,255,0.2); }
+  .tag.purple { background: rgba(124,58,237,0.1);  color: #a78bfa;       border: 1px solid rgba(124,58,237,0.2); }
+  .tag.green  { background: rgba(16,185,129,0.1);  color: var(--accent3); border: 1px solid rgba(16,185,129,0.2); }
+  .tag.yellow { background: rgba(245,158,11,0.1);  color: var(--accent4); border: 1px solid rgba(245,158,11,0.2); }
+  .tag.red    { background: rgba(239,68,68,0.1);   color: var(--accent5); border: 1px solid rgba(239,68,68,0.2); }
+
+  /* ── CALLOUT ── */
+  .callout { display: flex; gap: 14px; background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.15); border-radius: 10px; padding: 16px 20px; margin: 16px 0; }
+  .callout.warn { background: rgba(245,158,11,0.04); border-color: rgba(245,158,11,0.2); }
+  .callout.success { background: rgba(16,185,129,0.04); border-color: rgba(16,185,129,0.2); }
+  .callout-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .callout-body { color: var(--text2); font-size: 14px; }
+  .callout-body strong { color: var(--text); }
+
+  /* ── Q&A SECTION ── */
+  .qa-section { padding: 48px 0 0; }
+  .qa-section-header { margin-bottom: 32px; }
+  .qa-section-header h2 { font-family: var(--sans); font-size: 32px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .qa-section-header p { color: var(--text3); font-family: var(--mono); font-size: 12px; }
+
+  .qa-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; transition: border-color 0.2s; }
+  .qa-card:hover { border-color: var(--border2); }
+  .qa-card.open { border-color: rgba(124,58,237,0.3); }
+
+  .qa-question { display: flex; align-items: center; gap: 16px; padding: 20px 24px; cursor: pointer; user-select: none; }
+  .qa-q-num { font-family: var(--mono); font-size: 11px; color: var(--accent2); background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.2); padding: 4px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .qa-q-text { font-family: var(--body); font-size: 15px; color: var(--text); font-weight: 500; flex: 1; }
+  .qa-toggle { font-family: var(--mono); font-size: 18px; color: var(--text3); transition: transform 0.2s; flex-shrink: 0; }
+  .qa-card.open .qa-toggle { transform: rotate(45deg); color: var(--accent2); }
+
+  .qa-answer { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+  .qa-card.open .qa-answer { max-height: 3000px; }
+
+  .qa-answer-inner { padding: 0 24px 24px; border-top: 1px solid var(--border); padding-top: 20px; }
+  .qa-answer-inner p { color: var(--text2); margin-bottom: 12px; font-size: 14px; line-height: 1.75; }
+  .qa-answer-inner p:last-child { margin-bottom: 0; }
+  .answer-label { font-family: var(--mono); font-size: 10px; color: var(--accent3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+
+  code { font-family: var(--mono); font-size: 12px; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.12); padding: 1px 6px; border-radius: 4px; color: var(--accent); }
+
+  /* ── SECRETS TABLE ── */
+  .secrets-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  .secrets-table th { background: rgba(124,58,237,0.08); color: #a78bfa; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; border: 1px solid var(--border2); }
+  .secrets-table td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text2); vertical-align: top; font-family: var(--mono); font-size: 12px; }
+  .secrets-table tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+  .secrets-table .key { color: var(--accent); }
+  .secrets-table .val { color: var(--accent3); }
+  .secrets-table .src { color: var(--text3); font-size: 11px; }
+</style>
+</head>
+<body>
+
+<div class="progress-bar"><div id="progress"></div></div>
+
+<!-- ── SIDEBAR ──────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="tag">Soldier 5</div>
+    <h1>CI/CD Pipeline Concepts</h1>
+    <div class="sub">GitHub Actions · AWS ECR · SSH Deploy</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">10 Concepts</div>
+    <a class="nav-item" href="#concept1"><span class="num">01</span>What is CI/CD?</a>
+    <a class="nav-item" href="#concept2"><span class="num">02</span>GitHub Actions</a>
+    <a class="nav-item" href="#concept3"><span class="num">03</span>Workflow Structure</a>
+    <a class="nav-item" href="#concept4"><span class="num">04</span>Runners</a>
+    <a class="nav-item" href="#concept5"><span class="num">05</span>GitHub Secrets</a>
+    <a class="nav-item" href="#concept6"><span class="num">06</span>github Context</a>
+    <a class="nav-item" href="#concept7"><span class="num">07</span>Reusable Actions</a>
+    <a class="nav-item" href="#concept8"><span class="num">08</span>Docker Build in CI</a>
+    <a class="nav-item" href="#concept9"><span class="num">09</span>ECR Push from CI</a>
+    <a class="nav-item" href="#concept10"><span class="num">10</span>SSH Deployment</a>
+
+    <div class="nav-section-label" style="margin-top:12px;">20 Interview Q&amp;As</div>
+    <a class="nav-item qa-link" href="#qa-section"><span class="num">Q&A</span>All 20 Questions</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    CampusCart DevOps Portfolio
+    <div class="soldier-badge">🎖️ Soldier 5 of 6</div>
+  </div>
+</aside>
+
+<!-- ── MAIN ──────────────────────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">CI/CD Pipeline — Soldier 5</div>
+    <h1>GitHub Actions<br>CI/CD Pipeline</h1>
+    <p class="hero-desc">From <code>git push</code> to live production in under 5 minutes — zero manual steps, every single time. This document teaches every concept behind the deploy.yml workflow at the depth needed to explain it confidently in any interview.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><span class="val">2</span><span class="lbl">Pipeline Jobs</span></div>
+      <div class="hero-stat"><span class="val">6</span><span class="lbl">GitHub Secrets</span></div>
+      <div class="hero-stat"><span class="val">10</span><span class="lbl">Concepts</span></div>
+      <div class="hero-stat"><span class="val">20</span><span class="lbl">Interview Q&amp;As</span></div>
+      <div class="hero-stat"><span class="val">0</span><span class="lbl">Manual Steps</span></div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- CONCEPT 1 — WHAT IS CI/CD -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="concept1">
+      <div class="section-header">
+        <div class="section-num">CONCEPT 01</div>
+        <div class="section-title-block">
+          <h2>What is CI/CD?</h2>
+          <div class="section-sub">continuous integration · continuous delivery · continuous deployment</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">🔄</span>The Core Definition</h3>
+        <p><strong>CI (Continuous Integration)</strong> means every developer commit automatically triggers a build and test process. The moment code is pushed, a machine builds it and runs tests — without any human starting it. The goal is to detect broken code within minutes, not days.</p>
+        <p><strong>CD (Continuous Delivery)</strong> means the software is always in a deployable state. After CI passes, the artifact (a Docker image in our case) is ready to deploy to production. A human or a button click is still required for the final deployment step.</p>
+        <p><strong>CD (Continuous Deployment)</strong> goes one step further — the deployment to production is also automated. Zero human approval required. Every push to main that passes CI lands in production automatically. This is what CampusCart does.</p>
+      </div>
+
+      <div class="two-col">
+        <div class="teach-block">
+          <h3><span class="icon">❌</span>Before CI/CD — Manual Process</h3>
+          <ol>
+            <li>Developer finishes feature, has to remember to deploy</li>
+            <li>SSH into EC2 manually</li>
+            <li>git pull the changes</li>
+            <li>docker build the image (on the t2.micro — takes 10+ mins, OOMs)</li>
+            <li>docker compose up and pray it works</li>
+            <li>Manually check if the app is running</li>
+            <li>Forget to deploy on Friday → bug lives in production all weekend</li>
+          </ol>
+        </div>
+        <div class="teach-block success">
+          <h3><span class="icon">✅</span>After CI/CD — CampusCart Pipeline</h3>
+          <ol>
+            <li><code>git push origin main</code></li>
+            <li>GitHub Actions detects the push automatically</li>
+            <li>GitHub's powerful runner builds the Docker image</li>
+            <li>Image pushed to ECR with the commit SHA as tag</li>
+            <li>SSH into EC2 automatically, run deploy.sh</li>
+            <li>Health check confirms app is live</li>
+            <li>Developer gets a green checkmark in 3–5 minutes</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="teach-block warning">
+        <h3><span class="icon">📋</span>Interview Framing — "70% faster release cycles"</h3>
+        <p>When your resume says "cutting release cycle time by 70%" — here is what that means concretely: before, a deployment required manual SSH, manual docker build (~10 minutes on t2.micro), manual verification. That's 20–30 minutes of developer time, often skipped or deferred. After, <code>git push</code> triggers everything automatically in 3–5 minutes with no developer attention. That's the 70% — and it's conservative.</p>
+        <p>More importantly: <strong>100% of the remaining 30%</strong> is now git, not SSH sessions. The developer never touches the production server directly.</p>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- CONCEPT 2 — GITHUB ACTIONS -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="concept2">
+      <div class="section-header">
+        <div class="section-num">CONCEPT 02</div>
+        <div class="section-title-block">
+          <h2>GitHub Actions</h2>
+          <div class="section-sub">github's built-in ci/cd platform · yaml-driven · event-triggered</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">⚙️</span>What GitHub Actions Is</h3>
+        <p>GitHub Actions is GitHub's built-in CI/CD and automation platform. It lets you define automated workflows in YAML files stored inside your repository at <code>.github/workflows/</code>. When a specified GitHub event occurs (a push, a PR, a schedule, a manual trigger), GitHub spins up a virtual machine and runs your workflow.</p>
+        <p>No external CI server to maintain. No Jenkins, no CircleCI account, no billing configuration for new developers. The pipeline definition lives in the same repo as the code, reviewed with the same pull requests, versioned with the same git history.</p>
+      </div>
+
+      <div class="two-col">
+        <div class="teach-block">
+          <h3><span class="icon">💰</span>Pricing (What Matters for Interviews)</h3>
+          <ul>
+            <li><strong>Public repos:</strong> completely free, unlimited minutes</li>
+            <li><strong>Private repos:</strong> 2,000 free minutes/month on Free plan</li>
+            <li><strong>After free tier:</strong> Linux runners ~$0.008/minute</li>
+            <li><strong>CampusCart:</strong> a full deployment takes ~4 minutes. You could do 500 deployments/month on the free tier</li>
+          </ul>
+        </div>
+        <div class="teach-block">
+          <h3><span class="icon">🔁</span>Supported Event Triggers</h3>
+          <ul>
+            <li><code>push</code> — code pushed to a branch</li>
+            <li><code>pull_request</code> — PR opened, updated, merged</li>
+            <li><code>schedule</code> — cron-style, e.g., every night at 2am</li>
+            <li><code>workflow_dispatch</code> — manual button in UI</li>
+            <li><code>release</code> — when a GitHub Release is published</li>
+            <li><code>issue_comment</code> — when someone comments on an issue</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body"><strong>Why not Jenkins or CircleCI?</strong> Jenkins requires a dedicated server to maintain, patch, and scale. CircleCI is external — another account, another billing relationship, another login. GitHub Actions is built in. For a portfolio project deploying to a single EC2, GitHub Actions is the correct tool. In interviews, be ready to explain this tradeoff — Actions is not always the right answer for larger organizations (some need self-hosted agents, compliance constraints, etc.).</div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- CONCEPT 3 — WORKFLOW STRUCTURE -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="concept3">
+      <div class="section-header">
+        <div class="section-num">CONCEPT 03</div>
+        <div class="section-title-block">
+          <h2>Workflow Structure</h2>
+          <div class="section-sub">workflow → jobs → steps · sequential vs parallel execution</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">🏗️</span>Three-Level Hierarchy</h3>
+        <p>Every GitHub Actions workflow follows the same hierarchy. Understanding this deeply is essential — most interview questions about GitHub Actions are really questions about this structure.</p>
+      </div>
+
+      <div class="tree-block">
+<span class="t-root">workflow (deploy.yml)</span>
+<span class="t-detail"> │  Triggered by: push to main, workflow_dispatch</span>
+<span class="t-detail"> │  Has two jobs running sequentially (due to needs:)</span>
+<span class="t-detail"> │</span>
+<span class="t-job"> ├── JOB 1: build-and-push</span>
+<span class="t-detail"> │    Runs on: ubuntu-latest (GitHub-hosted VM)</span>
+<span class="t-detail"> │    Steps run sequentially — each must pass for next to run</span>
+<span class="t-step"> │    ├── Step 1: actions/checkout@v4</span>
+<span class="t-step"> │    ├── Step 2: aws-actions/configure-aws-credentials@v4</span>
+<span class="t-step"> │    ├── Step 3: aws-actions/amazon-ecr-login@v2</span>
+<span class="t-step"> │    ├── Step 4: docker build (SHA tag + latest tag)</span>
+<span class="t-step"> │    └── Step 5: docker push (both tags)</span>
+<span class="t-detail"> │</span>
+<span class="t-job"> └── JOB 2: deploy</span>
+<span class="t-detail">      Runs on: ubuntu-latest (DIFFERENT VM from Job 1)</span>
+<span class="t-detail">      needs: build-and-push  ← only runs if Job 1 succeeded</span>
+<span class="t-step">      ├── Step 1: actions/checkout@v4</span>
+<span class="t-step">      ├── Step 2: Setup SSH key (write PEM, chmod 400, ssh-keyscan)</span>
+<span class="t-step">      └── Step 3: SSH → git pull → deploy.sh SHA</span>
+      </div>
+
+      <div class="two-col">
+        <div class="teach-block warning">
+          <h3><span class="icon">⚠️</span>Jobs Run in PARALLEL by Default</h3>
+          <p>Without <code>needs:</code>, all jobs in a workflow start simultaneously on separate VMs. This is great for parallelism — run tests and linting at the same time. But you never want to deploy before the build finishes. That's why <code>needs: build-and-push</code> on the deploy job creates a strict dependency. Job 2 waits for Job 1 to fully complete and succeed.</p>
+        </div>
+        <div class="teach-block danger">
+          <h3><span class="icon">🔴</span>If Any Step Fails...</h3>
+          <p>Steps within a job are sequential. If Step 4 (docker build) fails with a syntax error, Step 5 (docker push) never runs. The job fails, and Job 2 is blocked by <code>needs:</code> — the deploy never happens. This is exactly correct behavior. You never push a broken image or deploy broken code.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- CONCEPT 4 — RUNNERS -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="concept4">
+      <div class="section-header">
+        <div class="section-num">CONCEPT 04</div>
+        <div class="section-title-block">
+          <h2>GitHub Actions Runners</h2>
+          <div class="section-sub">github-hosted vs self-hosted · ubuntu-latest · ephemeral VMs</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">🖥️</span>What is a Runner?</h3>
+        <p>A runner is the machine that executes your workflow jobs. When you specify <code>runs-on: ubuntu-latest</code>, GitHub allocates a brand-new virtual machine running Ubuntu 22.04 to run that job. The VM is created at the start of the job and destroyed when it ends. Nothing persists between runs.</p>
+        <p><strong>GitHub-hosted ubuntu-latest specs:</strong> 4 vCPUs, 16 GB RAM, 14 GB SSD. Compare this to the CampusCart EC2 (t2.micro: 1 vCPU, 1 GB RAM). GitHub's runner is 16× more RAM — that's why we build Docker images on the runner, not on EC2.</p>
+      </div>
+
+      <div class="teach-block">
+        <h3><span class="icon">📦</span>What's Pre-installed on ubuntu-latest</h3>
+        <p>GitHub maintains a large list of pre-installed tools so workflows don't need to install basics from scratch:</p>
+        <div class="tag-row">
+          <span class="tag blue">Docker Engine</span>
+          <span class="tag blue">Docker CLI</span>
+          <span class="tag blue">Docker Compose v2</span>
+          <span class="tag blue">git 2.x</span>
+          <span class="tag blue">AWS CLI v2</span>
+          <span class="tag blue">Python 3.x</span>
+          <span class="tag blue">Node.js LTS</span>
+          <span class="tag blue">curl / wget</span>
+          <span class="tag blue">jq</span>
+          <span class="tag blue">OpenSSH</span>
+        </div>
+        <p>This is why our workflow doesn't have any "Install Docker" or "Install AWS CLI" steps — they're already there.</p>
+      </div>
+
+      <table class="compare-table">
+        <tr><th>Feature</th><th>GitHub-Hosted (what we use)</th><th>Self-Hosted</th></tr>
+        <tr><td>Machine provided by</td><td>GitHub</td><td>You</td></tr>
+        <tr><td>Maintenance</td><td class="good">None — GitHub manages it</td><td class="bad">You patch, update, monitor</td></tr>
+        <tr><td>Cost</td><td>Free tier: 2000 min/month</td><td>Your infrastructure cost</td></tr>
+        <tr><td>Network access</td><td class="bad">No private network access to VPC</td><td class="good">Can be inside your VPC</td></tr>
+        <tr><td>Use case</td><td>Most projects, including CampusCart</td><td>Need VPC access, custom hardware, compliance</td></tr>
+      </table>
+
+      <div class="callout warn">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body"><strong>Ephemeral = stateless by design.</strong> Nothing from one run carries over to the next. Docker images built in Job 1 are NOT available in Job 2's runner — they're on different VMs. That's why Job 1 pushes to ECR (external registry) and Job 2 pulls from ECR on the EC2. ECR is the bridge between jobs.</div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- CONCEPT 5 — GITHUB SECRETS -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="concept5">
+      <div class="section-header">
+        <div class="section-num">CONCEPT 05</div>
+        <div class="section-title-block">
+          <h2>GitHub Secrets</h2>
+          <div class="section-sub">encrypted key-value store · masked in logs · never exposed</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">🔐</span>How GitHub Secrets Work</h3>
+        <p>GitHub Secrets is an encrypted key-value store at the repository level. Values are stored using <strong>libsodium sealed boxes</strong> (public-key cryptography) — GitHub never stores or sees the plaintext after you save a secret. The secret is only decrypted at workflow runtime, inside the runner's secure environment.</p>
+        <p>In workflow YAML, secrets are accessed via <code>${{ secrets.MY_SECRET }}</code>. GitHub replaces this expression with the actual value at runtime. Even if you write <code>echo ${{ secrets.AWS_SECRET_ACCESS_KEY }}</code> in a workflow, GitHub's log scrubber replaces the output with <code>***</code>.</p>
+      </div>
+
+      <div class="teach-block">
+        <h3><span class="icon">📋</span>The 6 Secrets CampusCart Needs</h3>
+        <table class="secrets-table">
+          <tr><th>Secret Name</th><th>Value Example</th><th>Source</th></tr>
+          <tr>
+            <td class="key">AWS_ACCESS_KEY_ID</td>
+            <td class="val">AKIAIOSFODNN7EXAMPLE</td>
+            <td class="src">Soldier 3 script output (IAM user: campuscart-github-actions)</td>
+          </tr>
+          <tr>
+            <td class="key">AWS_SECRET_ACCESS_KEY</td>
+            <td class="val">wJalrXUtnFEMI/K7MDENG/...</td>
+            <td class="src">Soldier 3 script output — shown ONCE, save immediately</td>
+          </tr>
+          <tr>
+            <td class="key">AWS_REGION</td>
+            <td class="val">ap-south-1</td>
+            <td class="src">Fixed value — Mumbai, where all resources live</td>
+          </tr>
+          <tr>
+            <td class="key">ECR_REPO_NAME</td>
+            <td class="val">campuscart-web</td>
+            <td class="src">ECR repository name created by Soldier 3</td>
+          </tr>
+          <tr>
+            <td class="key">EC2_HOST</td>
+            <td class="val">13.234.56.78</td>
+            <td class="src">Elastic IP — available after Soldier 6 runs ec2-launch.sh</td>
+          </tr>
+          <tr>
+            <td class="key">EC2_SSH_KEY</td>
+            <td class="val">-----BEGIN RSA PRIVATE KEY-----<br>MIIEow...</td>
+            <td class="src">Full content of campuscart-key.pem (not the path — the text)</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="two-col">
+        <div class="teach-block">
+          <h3><span class="icon">📁</span>Types of Secrets in GitHub</h3>
+          <ul>
+            <li><strong>Repository secrets</strong> — available to all workflows in the repo. What we use.</li>
+            <li><strong>Environment secrets</strong> — scoped to a specific deployment environment (staging, production). Needed for environment protection rules.</li>
+            <li><strong>Organization secrets</strong> — shared across multiple repos in an organization. Used by large teams with shared credentials.</li>
+          </ul>
+        </div>
+        <div class="teach-block warning">
+          <h3><span class="icon">⚠️</span>EC2_SSH_KEY — Critical Detail</h3>
+          <p>The <code>EC2_SSH_KEY</code> secret must contain the <strong>full text content</strong> of the <code>campuscart-key.pem</code> file — including the header and footer lines:</p>
+          <p><code>-----BEGIN RSA PRIVATE KEY-----</code></p>
+          <p><code>... many lines of base64 ...</code></p>
+          <p><code>-----END RSA PRIVATE KEY-----</code></p>
+          <p>Do NOT put the file path. Open the file in a text editor, select all, copy, paste as the secret value.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- CONCEPT 6 — GITHUB CONTEXT -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="concept6">
+      <div class="section-header">
+        <div class="section-num">CONCEPT 06</div>
+        <div class="section-title-block">
+          <h2>The github Context</h2>
+          <div class="section-sub">github.sha · github.ref · github.actor · immutable image tags</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">🔗</span>What the github Context Is</h3>
+        <p>In every GitHub Actions workflow, a <code>github</code> context object is automatically available. It contains metadata about the event that triggered the workflow — the commit SHA, the branch, the actor (who pushed), the repository name. You access it as <code>${{ github.property }}</code>.</p>
+        <p>The most important property for CampusCart is <code>github.sha</code> — the full 40-character git commit SHA that triggered the workflow. This is what ties the Docker image in ECR to the exact commit in git.</p>
+      </div>
+
+      <div class="teach-block">
+        <h3><span class="icon">📋</span>Key Context Properties</h3>
+        <table class="compare-table">
+          <tr><th>Property</th><th>Example Value</th><th>How CampusCart Uses It</th></tr>
+          <tr><td><code>github.sha</code></td><td>a3f1c9d2e8b456789...</td><td>Docker image tag in Job 1, passed to deploy.sh in Job 2</td></tr>
+          <tr><td><code>github.ref</code></td><td>refs/heads/main</td><td>Not used directly — the trigger filter already ensures main</td></tr>
+          <tr><td><code>github.actor</code></td><td>bharathMoger18</td><td>Could be used in Slack notifications ("bharath deployed...")</td></tr>
+          <tr><td><code>github.repository</code></td><td>bharathMoger18/campuscart</td><td>Useful in multi-repo pipelines</td></tr>
+          <tr><td><code>github.run_id</code></td><td>4827391047</td><td>Unique ID for this run — links logs in GitHub UI</td></tr>
+          <tr><td><code>github.run_number</code></td><td>47</td><td>Sequential deployment counter (deploy #47)</td></tr>
+        </table>
+      </div>
+
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body"><strong>Why github.sha is the right image tag.</strong> It's immutable — a SHA always points to the same code, forever. It's traceable — you can look up any SHA in git log and see the commit message, author, files changed. It's safe to rollback — deploy.sh with a previous SHA deploys the previous version exactly. "latest" has none of these properties. Never use "latest" as your only production tag.</div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- CONCEPT 7 — REUSABLE ACTIONS -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="concept7">
+      <div class="section-header">
+        <div class="section-num">CONCEPT 07</div>
+        <div class="section-title-block">
+          <h2>Reusable Actions</h2>
+          <div class="section-sub">uses: · @v4 versioning · official aws-actions · actions marketplace</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">🧩</span>What "uses:" Means</h3>
+        <p>When you write <code>uses: actions/checkout@v4</code>, you're referencing a reusable GitHub Action published in a public repository. The format is <code>OWNER/REPO@VERSION</code>. GitHub fetches the code from that repository at that version and runs it as part of your step.</p>
+        <p>Think of it like importing a well-tested library function instead of writing the same logic from scratch. <code>actions/checkout</code> has been tested by millions of workflows, handles edge cases (submodules, LFS, sparse checkout), and receives security updates. Writing your own <code>git clone</code> commands would be less reliable.</p>
+      </div>
+
+      <div class="teach-block">
+        <h3><span class="icon">📦</span>The Three Actions CampusCart Uses</h3>
+        <table class="compare-table">
+          <tr><th>Action</th><th>What It Does</th><th>Alternative (manual)</th></tr>
+          <tr>
+            <td><code>actions/checkout@v4</code></td>
+            <td>Clones repo into runner workspace, sets git config</td>
+            <td><code>git clone https://github.com/... .</code> (needs auth token)</td>
+          </tr>
+          <tr>
+            <td><code>aws-actions/configure-aws-credentials@v4</code></td>
+            <td>Sets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY env vars</td>
+            <td><code>export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}</code></td>
+          </tr>
+          <tr>
+            <td><code>aws-actions/amazon-ecr-login@v2</code></td>
+            <td>Runs <code>aws ecr get-login-password | docker login</code>, outputs registry URL</td>
+            <td>Multi-line shell script with error handling</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="two-col">
+        <div class="teach-block">
+          <h3><span class="icon">🔢</span>Version Pinning Strategies</h3>
+          <ul>
+            <li><code>@v4</code> — <strong>Major version tag</strong> (what we use). Gets security patches automatically. Never gets breaking changes. Best balance of security and stability.</li>
+            <li><code>@v4.1.2</code> — <strong>Exact version</strong>. Maximum reproducibility. Must manually update for security patches.</li>
+            <li><code>@abc123f</code> — <strong>Full SHA</strong>. Maximum security. Immutable — no one can replace the action at that SHA. Required in high-security environments.</li>
+            <li><code>@main</code> — <strong>Never do this</strong>. The action maintainer could push breaking changes or malicious code at any time.</li>
+          </ul>
+        </div>
+        <div class="teach-block purple">
+          <h3><span class="icon">🏪</span>GitHub Marketplace</h3>
+          <p>GitHub has a marketplace (<a href="https://github.com/marketplace?type=actions" style="color:var(--accent)">github.com/marketplace</a>) with thousands of pre-built actions. Common ones relevant to DevOps:</p>
+          <ul>
+            <li><code>actions/upload-artifact</code> — share files between jobs</li>
+            <li><code>actions/setup-python</code> — install a specific Python version</li>
+            <li><code>8398a7/action-slack</code> — Slack notifications</li>
+            <li><code>snyk/actions</code> — security vulnerability scanning</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- CONCEPT 8 — DOCKER BUILD IN CI -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="concept8">
+      <div class="section-header">
+        <div class="section-num">CONCEPT 08</div>
+        <div class="section-title-block">
+          <h2>Docker Build in CI</h2>
+          <div class="section-sub">build context · layer caching · why NOT build on EC2</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">🐳</span>What Happens During docker build in CI</h3>
+        <p>The GitHub Actions runner has Docker Engine pre-installed. When our workflow runs <code>docker build -t ... ./campuscart-backend</code>, Docker sends the <code>./campuscart-backend</code> directory (the build context) to the Docker daemon on the runner. The daemon reads the Dockerfile and executes each instruction to create image layers.</p>
+        <p>The resulting image exists only in the runner's local Docker cache. It's not in ECR yet — that's what the <code>docker push</code> step does.</p>
+      </div>
+
+      <div class="two-col">
+        <div class="teach-block success">
+          <h3><span class="icon">✅</span>Why Build on GitHub Runner</h3>
+          <ul>
+            <li><strong>4 vCPUs, 16 GB RAM</strong> — plenty for pip install + collectstatic</li>
+            <li>Build time: 2–4 minutes for Django image</li>
+            <li>No cost to EC2 resources during build</li>
+            <li>Clean environment every run — no cached cruft from old builds</li>
+          </ul>
+        </div>
+        <div class="teach-block danger">
+          <h3><span class="icon">🔴</span>Why NOT Build on EC2</h3>
+          <ul>
+            <li><strong>t2.micro: 1 vCPU, 1 GB RAM</strong></li>
+            <li>Django image with C extensions (psycopg2, Pillow) compiles native code — this needs significant RAM</li>
+            <li>pip install can OOM-kill the build on 1 GB RAM</li>
+            <li>Even if it works, it blocks the server for 5–10 minutes</li>
+            <li>Containers serving traffic during build = resource contention</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="teach-block warning">
+        <h3><span class="icon">💾</span>Docker Layer Caching in CI</h3>
+        <p>By default, GitHub Actions runners start fresh every run — Docker's layer cache is empty. Every build re-downloads the Python base image and re-runs pip install, even if dependencies haven't changed. This adds 2–3 minutes per build.</p>
+        <p>The solution is <code>actions/cache</code> with Docker's cache-from/cache-to flags, or using GitHub Actions' built-in cache backend. For CampusCart at this stage, the added complexity (cache invalidation logic, cache keys tied to requirements.txt) isn't worth it. A 4-minute build on a free runner is acceptable. Large production pipelines at companies absolutely implement layer caching to bring builds from 10+ minutes down to 1-2 minutes.</p>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- CONCEPT 9 — ECR PUSH FROM CI -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="concept9">
+      <div class="section-header">
+        <div class="section-num">CONCEPT 09</div>
+        <div class="section-sub">iam credentials · ecr authentication · layer deduplication · data transfer costs</div>
+        <div class="section-title-block">
+          <h2>ECR Push from CI</h2>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">📤</span>The Complete ECR Push Flow</h3>
+        <div class="pipeline">
+          <div class="pipe-step">
+            <div class="p-icon">🔑</div>
+            <div class="p-label">Credentials</div>
+            <div class="p-desc">GitHub Secrets → AWS env vars</div>
+          </div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-step">
+            <div class="p-icon">🎫</div>
+            <div class="p-label">ECR Token</div>
+            <div class="p-desc">ecr get-login-password (12hr token)</div>
+          </div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-step">
+            <div class="p-icon">🐳</div>
+            <div class="p-label">docker login</div>
+            <div class="p-desc">Runner authenticated to ECR</div>
+          </div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-step">
+            <div class="p-icon">📦</div>
+            <div class="p-label">docker push</div>
+            <div class="p-desc">Layers uploaded to ap-south-1</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="teach-block">
+          <h3><span class="icon">👤</span>IAM: Two Different Identities</h3>
+          <p>GitHub Actions uses the <strong>campuscart-github-actions</strong> IAM user (created by Soldier 3). This user has exactly one permission: <code>ecr:GetAuthorizationToken</code> + ECR push permissions on the campuscart-web repository. Least privilege — it cannot do anything else in AWS.</p>
+          <p>The EC2 uses the <strong>campuscart-ec2-role</strong> IAM role (Instance Profile). This role can pull from ECR, read SSM parameters, and other EC2-specific operations. It cannot push to ECR.</p>
+          <p>Two identities, two permission sets, zero overlap. Clean security boundary.</p>
+        </div>
+        <div class="teach-block">
+          <h3><span class="icon">💰</span>Data Transfer Costs</h3>
+          <ul>
+            <li><strong>Push (GitHub Runner → ECR):</strong> Inbound to AWS is free. Pushing the image costs nothing.</li>
+            <li><strong>Pull (EC2 → ECR, same region):</strong> EC2 pulling from ECR in the same region (ap-south-1) is free — data stays within AWS's network.</li>
+            <li><strong>Layer deduplication:</strong> If Python base layer (200 MB) is already in ECR, only the changed application layer (~5 MB) is uploaded per deploy. Very efficient.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- CONCEPT 10 — SSH DEPLOYMENT FROM CI -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="concept-section fade-in" id="concept10">
+      <div class="section-header">
+        <div class="section-num">CONCEPT 10</div>
+        <div class="section-title-block">
+          <h2>SSH Deployment from CI</h2>
+          <div class="section-sub">private key in secrets · ssh-keyscan · stricthostchecking · exit codes</div>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">🔌</span>Why SSH? — The Network Reality</h3>
+        <p>GitHub Actions runners run on GitHub's infrastructure — a completely different network from your EC2 in ap-south-1. They cannot directly execute code on your EC2, cannot call your EC2's internal APIs, and cannot use AWS SSM Session Manager (which requires the EC2 to have SSM agent + IAM role configured specifically for it, adding complexity).</p>
+        <p>SSH is the universal, battle-tested bridge. The EC2 has port 22 open in its security group (Soldier 3). The runner has the private key. One <code>ssh</code> command gets a shell on the EC2 and runs whatever you need.</p>
+      </div>
+
+      <div class="teach-block">
+        <h3><span class="icon">🔐</span>The SSH Security Model</h3>
+        <p>AWS generates the <code>campuscart-key</code> key pair during EC2 launch (Soldier 2). The <strong>public key</strong> goes into EC2's <code>/home/ubuntu/.ssh/authorized_keys</code> — it lives on the server. The <strong>private key</strong> (<code>campuscart-key.pem</code>) is downloaded once and should be stored securely — we put it in GitHub Secrets as <code>EC2_SSH_KEY</code>.</p>
+        <p>During the SSH handshake: the runner presents the private key, EC2 verifies it matches the public key in authorized_keys, access is granted. The private key never travels over the network in plaintext — only a cryptographic proof that you have it.</p>
+      </div>
+
+      <div class="two-col">
+        <div class="teach-block success">
+          <h3><span class="icon">✅</span>ssh-keyscan — The Right Way</h3>
+          <p>Before SSHing, we run <code>ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts</code>. This fetches EC2's public host key (fingerprint) and stores it in known_hosts. When SSH connects, it verifies the server's identity against this stored fingerprint — preventing man-in-the-middle attacks.</p>
+          <p>Without this, SSH would prompt "Are you sure you want to connect?" — which hangs forever in an automated pipeline.</p>
+        </div>
+        <div class="teach-block warning">
+          <h3><span class="icon">⚠️</span>-o StrictHostKeyChecking=no</h3>
+          <p>This option completely disables host key verification. SSH trusts whatever server answers — even a MITM attacker. We include it as a belt-and-suspenders backup, but the real protection is ssh-keyscan pre-populating known_hosts.</p>
+          <p>In a stricter production environment, you'd remove this flag and rely solely on known_hosts. For a portfolio EC2 with no sensitive customer data, it's an acceptable trade-off.</p>
+        </div>
+      </div>
+
+      <div class="teach-block highlight">
+        <h3><span class="icon">🎯</span>Exit Codes — How GitHub Actions Knows Success or Failure</h3>
+        <p>This is one of the most important things to understand. When the runner runs the <code>ssh</code> command, SSH returns the exit code of the remote command (<code>deploy.sh</code>). Soldier 4's deploy.sh exits 0 on success and 1 on failure.</p>
+        <p>GitHub Actions evaluates every step's exit code. Non-zero exit code = step failed = job failed = workflow run is marked red. The developer who pushed gets a GitHub notification email with a link to the failed logs. And because deploy.sh prints the container logs before exiting 1, the failure is fully diagnosable without ever SSHing into the EC2 manually.</p>
+        <p>This is the end-to-end reliability chain: <strong>deploy.sh exit code → SSH exit code → GitHub step result → job result → workflow result → developer notification</strong>.</p>
+      </div>
+
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Q&A SECTION -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <section class="qa-section fade-in" id="qa-section">
+      <div class="qa-section-header">
+        <h2>20 Interview Questions</h2>
+        <p>Every answer uses CampusCart context. Click any question to expand the answer.</p>
+      </div>
+
+      <div class="qa-grid">
+
+        <!-- Q1 -->
+        <div class="qa-card" id="q1">
+          <div class="qa-question" onclick="toggleQA('q1')">
+            <span class="qa-q-num">Q 1</span>
+            <span class="qa-q-text">What is CI/CD and what problem does it solve?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>CI/CD is a practice that automates the software delivery pipeline. CI (Continuous Integration) means every commit automatically triggers a build and optionally a test run — catching broken code within minutes. CD (Continuous Deployment) means the application is automatically deployed to production after a successful build, with no human intervention required.</p>
+            <p>The problem it solves for CampusCart: before CI/CD, deploying meant manually SSHing into the EC2, running git pull, building the Docker image on the t2.micro (which takes 10+ minutes and can OOM on 1 GB RAM), restarting containers, and manually checking if the app was live. This was error-prone, time-consuming, and often skipped — meaning bug fixes sat undeployed for days. With the GitHub Actions pipeline, <code>git push origin main</code> triggers the entire process automatically in 3–5 minutes on GitHub's 16 GB RAM runner, with health checks and automatic failure detection.</p>
+          </div></div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="qa-card" id="q2">
+          <div class="qa-question" onclick="toggleQA('q2')">
+            <span class="qa-q-num">Q 2</span>
+            <span class="qa-q-text">What is GitHub Actions and how does it work?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>GitHub Actions is GitHub's built-in CI/CD and automation platform. Workflows are defined as YAML files stored in <code>.github/workflows/</code> inside the repository. When a specified GitHub event occurs — like a push to a branch — GitHub reads the relevant workflow files and executes them on virtual machines it provides called runners.</p>
+            <p>For CampusCart, when a developer pushes to main, GitHub reads <code>.github/workflows/deploy.yml</code>, spins up an Ubuntu 22.04 virtual machine (ubuntu-latest), and runs the jobs defined in it. The runner has Docker, git, and AWS CLI pre-installed. Our workflow builds the Django Docker image on that runner, pushes it to Amazon ECR, then SSHes into the production EC2 to trigger a container restart with the new image. The entire process is event-driven and requires zero manual steps after the initial setup of GitHub Secrets.</p>
+          </div></div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="qa-card" id="q3">
+          <div class="qa-question" onclick="toggleQA('q3')">
+            <span class="qa-q-num">Q 3</span>
+            <span class="qa-q-text">What is a workflow trigger? What triggers your pipeline?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>A workflow trigger is an event that causes a GitHub Actions workflow to execute. It's defined in the <code>on:</code> block at the top of the workflow file. GitHub supports many trigger types: <code>push</code>, <code>pull_request</code>, <code>schedule</code> (cron), <code>workflow_dispatch</code> (manual), <code>release</code>, and more.</p>
+            <p>CampusCart's pipeline has two triggers. The primary trigger is <code>push</code> filtered to the <code>main</code> branch — every time code is merged to main, the pipeline runs automatically. We specifically exclude pull requests (no <code>pull_request:</code> trigger) because we never deploy unreviewed code to production. Feature branches don't trigger deployments.</p>
+            <p>The secondary trigger is <code>workflow_dispatch</code> — a manual trigger button that appears in the GitHub Actions UI. This is useful for re-deploying after infrastructure work (for example, if the EC2 was rebooted and containers need restarting), or for the first deployment during Soldier 6 setup, without needing to make a dummy code commit.</p>
+          </div></div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="qa-card" id="q4">
+          <div class="qa-question" onclick="toggleQA('q4')">
+            <span class="qa-q-num">Q 4</span>
+            <span class="qa-q-text">What is the difference between a job and a step?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>A <strong>job</strong> is a unit of work that runs on its own virtual machine (runner). Each job gets a fresh, isolated environment. Jobs in a workflow run in parallel by default — unless you use <code>needs:</code> to create dependencies. Jobs can have their own <code>runs-on</code> — one job could run on ubuntu-latest and another on windows-latest if needed.</p>
+            <p>A <strong>step</strong> is a single action within a job. Steps run sequentially within the same VM — they share the job's workspace, environment variables, and filesystem. A step is either a shell command (<code>run:</code>) or a reusable action (<code>uses:</code>). If any step exits with a non-zero code, the remaining steps in the job are skipped and the job fails.</p>
+            <p>For CampusCart: we have two jobs. Job 1 (build-and-push) has 5 steps — checkout, AWS credentials, ECR login, docker build, docker push — all sharing the same runner and Docker image state. Job 2 (deploy) runs on a completely different VM with its own 3 steps. The jobs communicate via ECR (not via shared filesystem) because they're on separate machines.</p>
+          </div></div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="qa-card" id="q5">
+          <div class="qa-question" onclick="toggleQA('q5')">
+            <span class="qa-q-num">Q 5</span>
+            <span class="qa-q-text">What does needs: do in GitHub Actions?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p><code>needs:</code> creates a dependency between jobs. A job with <code>needs: [job-a, job-b]</code> will only start after all listed jobs have completed successfully. If any listed job fails or is skipped, the dependent job is skipped too.</p>
+            <p>In CampusCart's pipeline, the <code>deploy</code> job has <code>needs: build-and-push</code>. This means: (1) build-and-push must finish before deploy starts — they can't run simultaneously. (2) If build-and-push fails at any step (e.g., docker build fails because of a syntax error in Dockerfile), the deploy job is automatically skipped. We never attempt to deploy an image that wasn't successfully built and pushed to ECR.</p>
+            <p>This is a critical safety gate. Without <code>needs:</code>, both jobs would start in parallel, and deploy would try to SSH into EC2 and run deploy.sh with a SHA that doesn't exist in ECR yet — the deploy would fail every time. With <code>needs:</code>, the deployment only happens after the image is guaranteed to be in ECR.</p>
+          </div></div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="qa-card" id="q6">
+          <div class="qa-question" onclick="toggleQA('q6')">
+            <span class="qa-q-num">Q 6</span>
+            <span class="qa-q-text">What are GitHub Secrets and how are they protected?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>GitHub Secrets is an encrypted key-value store at the repository level (or organization level). Values are encrypted using libsodium public-key cryptography before storage — GitHub's own systems never see the plaintext value after it's saved. Secrets are only decrypted at workflow runtime, inside the runner's secure memory.</p>
+            <p>In workflow YAML, secrets are accessed via <code>${{ secrets.SECRET_NAME }}</code>. GitHub replaces this expression at runtime. Even if a developer accidentally writes <code>echo ${{ secrets.AWS_SECRET_ACCESS_KEY }}</code> in a step, GitHub's log scrubber detects the secret value in output and replaces it with <code>***</code>. Secrets are never visible in workflow logs, PR previews, or to repository collaborators who don't have admin access.</p>
+            <p>CampusCart uses 6 secrets: AWS IAM credentials for ECR push (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY), AWS region and ECR repo name, and the EC2 SSH key and IP address. The most sensitive is EC2_SSH_KEY — the full content of the private key PEM file that grants SSH access to the production server. Storing it in GitHub Secrets keeps it encrypted and never on disk anywhere except inside a running workflow.</p>
+          </div></div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="qa-card" id="q7">
+          <div class="qa-question" onclick="toggleQA('q7')">
+            <span class="qa-q-num">Q 7</span>
+            <span class="qa-q-text">How does your pipeline authenticate to AWS?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>The pipeline uses the <code>aws-actions/configure-aws-credentials@v4</code> action in Job 1. This action reads the <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code> from GitHub Secrets and sets them as environment variables on the runner. All subsequent AWS CLI commands and Docker ECR operations on the runner automatically use these credentials.</p>
+            <p>These credentials belong to the <code>campuscart-github-actions</code> IAM user — created by Soldier 3's security-setup.sh with a least-privilege policy. The only permissions this user has are ECR-related: <code>ecr:GetAuthorizationToken</code> and ECR push operations on the campuscart-web repository. It cannot launch EC2 instances, read SSM parameters, or do anything else in AWS.</p>
+            <p>The EC2 itself uses a completely different identity for authentication — the <code>campuscart-ec2-role</code> IAM role attached as an Instance Profile. When deploy.sh on EC2 runs <code>aws ecr get-login-password</code>, it uses the IAM role via the Instance Metadata Service — no static credentials needed on the server. This is the AWS-recommended approach: IAM roles for EC2, IAM users (with access keys) for external services like GitHub Actions.</p>
+          </div></div>
+        </div>
+
+        <!-- Q8 -->
+        <div class="qa-card" id="q8">
+          <div class="qa-question" onclick="toggleQA('q8')">
+            <span class="qa-q-num">Q 8</span>
+            <span class="qa-q-text">What is github.sha and why do you use it as the Docker image tag?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p><code>github.sha</code> is a property of the GitHub Actions context object, available in all workflow expressions as <code>${{ github.sha }}</code>. It contains the full 40-character git commit SHA (e.g., <code>a3f1c9d2e8b4567890abcdef1234567890abcdef</code>) of the commit that triggered the workflow run.</p>
+            <p>We use it as the Docker image tag for three reasons. First, <strong>immutability</strong>: a git SHA always refers to the same commit — and by extension, the same Docker image. The tag <code>campuscart-web:a3f1c9d2</code> will forever mean "the image built from commit a3f1c9d2." Unlike <code>latest</code>, which is overwritten every push. Second, <strong>traceability</strong>: if the application misbehaves in production, you can run <code>docker inspect</code> on the running container, get the image tag, look up that SHA in git, and see exactly which code is running — commit message, author, files changed. Third, <strong>rollback</strong>: to rollback to a previous version, you run <code>deploy.sh &lt;previous-sha&gt;</code> with the SHA from the last known-good commit. The image is still in ECR with that SHA tag.</p>
+          </div></div>
+        </div>
+
+        <!-- Q9 -->
+        <div class="qa-card" id="q9">
+          <div class="qa-question" onclick="toggleQA('q9')">
+            <span class="qa-q-num">Q 9</span>
+            <span class="qa-q-text">Why not use "latest" as the only image tag?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>Using "latest" as the only production tag is a well-known anti-pattern with three main problems. First, <strong>rollbacks become impossible</strong>: if you deploy a broken version, "latest" already points to that broken image. You cannot "deploy latest minus one" — latest is a moving pointer, not a version. Second, <strong>no auditability</strong>: looking at a running container tagged "latest" tells you nothing about which commit is deployed. You can't diagnose production issues without knowing which code is running. Third, <strong>caching confusion</strong>: Docker may not re-pull "latest" if it thinks it has a cached version — even when ECR has a newer image. Specific SHA tags bypass this because the tag itself is new every push, forcing a fresh pull.</p>
+            <p>For CampusCart we actually push both a SHA tag and a "latest" tag on every build. The SHA tag is what deploy.sh always uses — this is our production deployment mechanism. The "latest" tag is a convenience for provision.sh's first-run fallback (when GitHub Actions hasn't run yet, provision.sh pulls "latest" to start the app). After initial setup, "latest" is never used for deployment decisions.</p>
+          </div></div>
+        </div>
+
+        <!-- Q10 -->
+        <div class="qa-card" id="q10">
+          <div class="qa-question" onclick="toggleQA('q10')">
+            <span class="qa-q-num">Q 10</span>
+            <span class="qa-q-text">What is actions/checkout and why is it needed?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p><code>actions/checkout@v4</code> is an official GitHub Action maintained by the GitHub team. It clones the repository into the runner's workspace (<code>$GITHUB_WORKSPACE</code>) and checks out the commit that triggered the workflow. Without it, the runner is a blank Ubuntu VM with no knowledge of your repository's files.</p>
+            <p>For Job 1, checkout is essential: the docker build command needs the Dockerfile and the entire <code>campuscart-backend/</code> directory as the build context. Without checkout, there's nothing to build. For Job 2, checkout is less strictly required (the deploy step SSHes into EC2 and runs scripts there), but we include it as a good practice — it makes git metadata available (for potential future Slack notifications with commit messages) and keeps the workspace consistent.</p>
+            <p>The <code>@v4</code> version pin means we automatically receive bug fixes and security patches within the v4 major version, but breaking changes (which would come as v5) are not automatically applied. This is the standard approach — balance between staying patched and staying stable.</p>
+          </div></div>
+        </div>
+
+        <!-- Q11 -->
+        <div class="qa-card" id="q11">
+          <div class="qa-question" onclick="toggleQA('q11')">
+            <span class="qa-q-num">Q 11</span>
+            <span class="qa-q-text">How does GitHub Actions SSH into EC2?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>The deploy job writes the private key from the <code>EC2_SSH_KEY</code> GitHub Secret to a file (<code>~/.ssh/campuscart-key.pem</code>), sets its permissions to 400 (owner read-only, as SSH requires), and runs <code>ssh-keyscan</code> to pre-populate the known_hosts file with EC2's host fingerprint. Then it runs the SSH command: <code>ssh -i ~/.ssh/campuscart-key.pem ubuntu@$EC2_HOST "..."</code>.</p>
+            <p>This works because the corresponding public key was placed in <code>/home/ubuntu/.ssh/authorized_keys</code> on the EC2 when the instance was launched with the <code>campuscart-key</code> key pair (Soldier 2). The SSH handshake uses public-key cryptography: the runner proves it has the private key (by solving a challenge signed with the public key), EC2 verifies the signature against authorized_keys, access is granted. The private key itself never travels over the network.</p>
+            <p>The GitHub runner and EC2 are on completely different networks — there's no VPN or private connection between them. SSH over port 22 is the bridge. Port 22 is open in the <code>campuscart-sg</code> security group (Soldier 3). EC2's Elastic IP is the public address the runner connects to.</p>
+          </div></div>
+        </div>
+
+        <!-- Q12 -->
+        <div class="qa-card" id="q12">
+          <div class="qa-question" onclick="toggleQA('q12')">
+            <span class="qa-q-num">Q 12</span>
+            <span class="qa-q-text">What is ssh-keyscan and why is it needed?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p><code>ssh-keyscan</code> is a utility that connects to a remote host and fetches its SSH public host key (fingerprint), then prints it in a format suitable for adding to <code>~/.ssh/known_hosts</code>. We run: <code>ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts</code>.</p>
+            <p>SSH's <em>host key verification</em> is a security feature. The first time you connect to a new host, SSH checks whether its fingerprint is in known_hosts. If not, it prompts: "The authenticity of host X can't be established. Are you sure you want to continue? (yes/no)". In an automated pipeline running on a headless VM, there is nobody to type "yes". The process hangs, waits for input that never comes, then times out — the deployment fails.</p>
+            <p><code>ssh-keyscan</code> pre-populates known_hosts before the SSH connection, so when SSH connects it finds the fingerprint there and proceeds without prompting. The <code>-H</code> flag hashes the hostname in the output, which is a security feature — it prevents an attacker who obtains the known_hosts file from learning which hosts you connect to.</p>
+          </div></div>
+        </div>
+
+        <!-- Q13 -->
+        <div class="qa-card" id="q13">
+          <div class="qa-question" onclick="toggleQA('q13')">
+            <span class="qa-q-num">Q 13</span>
+            <span class="qa-q-text">What happens if deploy.sh fails on EC2?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>Soldier 4's deploy.sh is designed to fail loudly. Before exiting 1, it prints the last 80 lines of the web container's logs, the last 20 lines of the db container's logs, and the output of <code>docker compose ps -a</code>. All of this output is captured by SSH and displayed in the GitHub Actions workflow log — so the developer sees the failure reason without needing to SSH into EC2 manually.</p>
+            <p>The container state at failure depends on what went wrong. If the ECR pull failed (wrong SHA, network issue), the old container is still running — no downtime. If docker compose up started but the new container crashed immediately, the old container was already stopped — brief downtime window. This is the limitation of single-node blue-green deployments without a load balancer: there is a brief window during container replacement.</p>
+            <p>Recovery: fix the code, push to main again, the pipeline runs with a new SHA. If you need to rollback immediately without waiting for a code fix, you can use <code>workflow_dispatch</code> and manually specify a previous known-good SHA — or SSH into EC2 and run <code>./scripts/deploy.sh &lt;previous-sha&gt;</code> directly.</p>
+          </div></div>
+        </div>
+
+        <!-- Q14 -->
+        <div class="qa-card" id="q14">
+          <div class="qa-question" onclick="toggleQA('q14')">
+            <span class="qa-q-num">Q 14</span>
+            <span class="qa-q-text">How does GitHub Actions know the deployment failed?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>Through exit codes. The entire failure detection chain is: deploy.sh uses <code>set -e</code> so any failing command (ECR pull, docker compose up) immediately causes the script to exit. The final health check loop sets a HEALTHY variable; if containers don't become healthy in 150 seconds, deploy.sh explicitly calls <code>exit 1</code>.</p>
+            <p>The SSH command on the GitHub Actions runner inherits the exit code of the remote command. So if deploy.sh exits 1, the <code>ssh</code> command in the workflow step exits 1. GitHub Actions evaluates each step's exit code — a non-zero exit code marks the step as failed. A failed step causes the job to fail. A failed job is marked red in the GitHub Actions UI, and GitHub sends email notifications to anyone watching the repository.</p>
+            <p>This exit code chain is what makes CI/CD reliable. Without it, a broken deployment would show as "green" in GitHub — the worst possible outcome. The entire chain from <code>deploy.sh exit 1</code> → SSH → GitHub step → job → notification is what closes the feedback loop for the developer.</p>
+          </div></div>
+        </div>
+
+        <!-- Q15 -->
+        <div class="qa-card" id="q15">
+          <div class="qa-question" onclick="toggleQA('q15')">
+            <span class="qa-q-num">Q 15</span>
+            <span class="qa-q-text">What is workflow_dispatch and when would you use it?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p><code>workflow_dispatch</code> is a GitHub Actions trigger that adds a "Run workflow" button to the Actions tab in the GitHub repository UI. It lets you manually trigger the workflow on demand without making a code commit. You can optionally define <code>inputs</code> on the trigger to accept parameters (e.g., a target environment, a specific image tag to deploy).</p>
+            <p>For CampusCart, three scenarios where it's useful: First, during initial setup (Soldier 6) — after creating GitHub Secrets, you want to trigger the first deployment without making a dummy code commit. Second, after infrastructure events — if EC2 is rebooted and the containers are down, you want to re-deploy the current main branch immediately. Third, debugging — you changed a GitHub Secret (rotated the AWS access key) and want to verify the pipeline works without touching any application code.</p>
+            <p>With no <code>inputs:</code> block defined (as in CampusCart), the manual trigger simply runs the workflow on the latest commit of the selected branch with no additional parameters. It always uses the <code>github.sha</code> of the latest commit on the selected branch.</p>
+          </div></div>
+        </div>
+
+        <!-- Q16 -->
+        <div class="qa-card" id="q16">
+          <div class="qa-question" onclick="toggleQA('q16')">
+            <span class="qa-q-num">Q 16</span>
+            <span class="qa-q-text">How does the pipeline achieve "70% faster release cycles"?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>The 70% figure comes from comparing the time and friction of manual deployments vs automated ones. Before: a developer finishes a feature, then has to context-switch to deployment — find the PEM file, SSH in, navigate to the app directory, run git pull, run docker compose, watch logs for errors, verify the app is up. This takes 15–20 minutes minimum, often more when troubleshooting build issues on the underpowered t2.micro. And it only happens when someone remembers to do it.</p>
+            <p>After: the developer pushes code — deployment is automatic, completed in 3–5 minutes on GitHub's runners. The developer doesn't wait for it; they move on and check the result in the GitHub Actions UI at their convenience. The effective time cost to the developer is near zero — git push is part of their normal workflow anyway.</p>
+            <p>The bigger impact is frequency and reliability: developers now deploy multiple times per day instead of once per sprint, bugs are caught in production earlier, and no deployment ever gets "forgotten." The 70% reduction in time compounds into much larger benefits through more frequent, more reliable releases.</p>
+          </div></div>
+        </div>
+
+        <!-- Q17 -->
+        <div class="qa-card" id="q17">
+          <div class="qa-question" onclick="toggleQA('q17')">
+            <span class="qa-q-num">Q 17</span>
+            <span class="qa-q-text">How does the pipeline achieve "100% manual deployment effort eliminated"?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>Once the pipeline is set up and GitHub Secrets are configured, the developer's entire production deployment workflow is: <code>git push origin main</code>. No SSH sessions. No manual docker commands. No checking if containers started. No manually verifying the application URL. Every step from code push to live production is automated by the GitHub Actions workflow.</p>
+            <p>The pipeline handles: checking out code, authenticating to AWS, building the Docker image, pushing to ECR, establishing SSH connection to EC2, pulling latest code on EC2, pulling the new Docker image, restarting containers, verifying health, and reporting the result. A green checkmark in GitHub means the app is live. A red X means it failed and the logs are in GitHub — still no SSH required to diagnose.</p>
+            <p>The only manual intervention required is for initial setup (one-time) and for rollbacks in emergencies. Even rollbacks can be automated by adding a rollback workflow that accepts a SHA parameter via <code>workflow_dispatch</code> with <code>inputs:</code>.</p>
+          </div></div>
+        </div>
+
+        <!-- Q18 -->
+        <div class="qa-card" id="q18">
+          <div class="qa-question" onclick="toggleQA('q18')">
+            <span class="qa-q-num">Q 18</span>
+            <span class="qa-q-text">What is a self-hosted runner vs GitHub-hosted runner?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>A <strong>GitHub-hosted runner</strong> is a virtual machine provided and managed by GitHub. You specify <code>runs-on: ubuntu-latest</code> and GitHub spins up a fresh Ubuntu VM for your job, runs it, and destroys it. You pay nothing for maintenance, patching, or provisioning. The VM comes with a large set of pre-installed tools. This is what CampusCart uses.</p>
+            <p>A <strong>self-hosted runner</strong> is a machine you own or manage that registers itself with GitHub to accept and run workflow jobs. You install the GitHub Actions runner application on it and it polls GitHub for new jobs. Self-hosted runners are useful when: your EC2 is in a private VPC with no public internet access (so GitHub's runners can't SSH in), you need access to private databases or internal APIs during tests, you need specific hardware (GPUs for ML workloads), or your compliance requirements mandate that code never leaves your infrastructure.</p>
+            <p>For CampusCart: GitHub-hosted runners are perfect. Our EC2 has a public Elastic IP, our ECR is in AWS, and we don't have compliance constraints. A self-hosted runner would require maintaining another EC2 instance just for CI, which adds unnecessary complexity for a portfolio project.</p>
+          </div></div>
+        </div>
+
+        <!-- Q19 -->
+        <div class="qa-card" id="q19">
+          <div class="qa-question" onclick="toggleQA('q19')">
+            <span class="qa-q-num">Q 19</span>
+            <span class="qa-q-text">How would you add a test step to this pipeline?</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer</div>
+            <p>The cleanest approach is to add a third job between build-and-push and deploy, or add test steps at the beginning of the build-and-push job. For a Django application, a test step before building the production image would look like: checkout the code, install Python dependencies (pip install -r requirements.txt), set up a test database (PostgreSQL via GitHub Actions' services), run <code>python manage.py test</code>, and only proceed to the build step if tests pass.</p>
+            <p>In GitHub Actions YAML, this would be a new job: <code>test</code> with <code>runs-on: ubuntu-latest</code>, a <code>services:</code> block to spin up a PostgreSQL container alongside the runner, and steps to install deps and run the Django test suite. Then the build-and-push job gets <code>needs: test</code>, and deploy gets <code>needs: build-and-push</code>. Now the dependency chain is: test → build → deploy. If any test fails, the image is never built and never deployed.</p>
+            <p>This is what makes CI/CD truly valuable — the "CI" part. Right now CampusCart's pipeline is really just CD (build and deploy). Adding automated tests transforms it into a full CI/CD pipeline where broken code is caught before it reaches production.</p>
+          </div></div>
+        </div>
+
+        <!-- Q20 -->
+        <div class="qa-card" id="q20">
+          <div class="qa-question" onclick="toggleQA('q20')">
+            <span class="qa-q-num">Q 20</span>
+            <span class="qa-q-text">Walk me through the complete flow from git push to application live.</span>
+            <span class="qa-toggle">+</span>
+          </div>
+          <div class="qa-answer"><div class="qa-answer-inner">
+            <div class="answer-label">Complete Answer — The Full Deployment Flow</div>
+            <p><strong>Step 1 — Push triggers workflow:</strong> Developer runs <code>git push origin main</code>. GitHub detects the push event on the main branch, reads <code>.github/workflows/deploy.yml</code>, and starts the <code>Deploy CampusCart</code> workflow run. GitHub assigns a unique <code>github.sha</code> (the commit SHA) to this run — this SHA will track the image all the way to production.</p>
+            <p><strong>Step 2 — Job 1 starts on a fresh runner:</strong> GitHub allocates an Ubuntu 22.04 VM (ubuntu-latest, 4 vCPU, 16 GB RAM). The 5 steps run sequentially: checkout clones the repo, configure-aws-credentials sets the IAM user env vars, amazon-ecr-login authenticates Docker with ECR (getting a 12-hour token), docker build builds the Django/Daphne image from <code>./campuscart-backend</code> and tags it with both the SHA and "latest", docker push uploads the image layers to ECR at <code>021859068764.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web:SHA</code>.</p>
+            <p><strong>Step 3 — Job 2 starts (needs: satisfied):</strong> A new, separate Ubuntu VM is allocated. Checkout runs again. The SSH key is written to <code>~/.ssh/campuscart-key.pem</code> with chmod 400. ssh-keyscan adds EC2's fingerprint to known_hosts.</p>
+            <p><strong>Step 4 — Deployment on EC2:</strong> The runner SSHes into EC2 (<code>ubuntu@ELASTIC_IP</code>) and runs three commands in sequence: <code>cd /app/campuscart</code> → <code>git pull origin main</code> (gets any updated compose files) → <code>./scripts/deploy.sh SHA</code>.</p>
+            <p><strong>Step 5 — deploy.sh executes on EC2:</strong> EC2's IAM role authenticates to ECR, the new image is pulled (only changed layers downloaded), WEB_IMAGE is exported, <code>docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build</code> replaces the web container with the new image. Health polling checks for the "healthy" status up to 150 seconds.</p>
+            <p><strong>Step 6 — Success confirmed:</strong> Container becomes healthy, deploy.sh exits 0, SSH exits 0, GitHub step passes, job is marked green, workflow run is complete. Developer sees ✅ in GitHub Actions. Application is live with the new code. Total time: approximately 3–5 minutes. Zero manual steps.</p>
+          </div></div>
+        </div>
+
+      </div><!-- /qa-grid -->
+
+      <div style="margin-top:40px;text-align:center;">
+        <div class="tag-row" style="justify-content:center;">
+          <span class="tag blue">GitHub Actions ✓</span>
+          <span class="tag blue">CI/CD Pipeline ✓</span>
+          <span class="tag blue">ECR Push ✓</span>
+          <span class="tag blue">IAM Least Privilege ✓</span>
+          <span class="tag blue">SSH Deploy ✓</span>
+          <span class="tag blue">github.sha ✓</span>
+          <span class="tag blue">ssh-keyscan ✓</span>
+          <span class="tag blue">Exit Codes ✓</span>
+          <span class="tag blue">Docker Layer Dedup ✓</span>
+          <span class="tag blue">Zero Manual Steps ✓</span>
+        </div>
+        <p style="color:var(--text3);font-size:13px;margin-top:20px;font-family:var(--mono);">Soldier 5 Concepts — 10 concepts · 20 interview Q&amp;As · Ready for deploy.yml</p>
+      </div>
+
+    </section>
+
+  </div><!-- /content -->
+</main>
+
+<script>
+  // Progress bar
+  window.addEventListener('scroll', () => {
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrolled = (window.scrollY / docHeight) * 100;
+    document.getElementById('progress').style.width = scrolled + '%';
+  });
+
+  // Active nav tracking
+  const sections = document.querySelectorAll('.concept-section, .qa-section');
+  const navItems = document.querySelectorAll('.nav-item');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navItems.forEach(item => {
+          item.classList.remove('active');
+          if (item.getAttribute('href') === '#' + id) item.classList.add('active');
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+
+  // Fade in on scroll
+  const fadeEls = document.querySelectorAll('.fade-in');
+  const fadeObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        fadeObs.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -80px 0px' });
+
+  fadeEls.forEach(el => fadeObs.observe(el));
+
+  // Q&A accordion toggle
+  function toggleQA(id) {
+    const card = document.getElementById(id);
+    const wasOpen = card.classList.contains('open');
+    document.querySelectorAll('.qa-card').forEach(c => c.classList.remove('open'));
+    if (!wasOpen) card.classList.add('open');
+  }
+</script>
+</body>
+</html>

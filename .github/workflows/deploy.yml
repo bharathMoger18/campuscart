@@ -1,0 +1,583 @@
+# ==============================================================================
+# CampusCart — .github/workflows/deploy.yml
+# ==============================================================================
+# PURPOSE:
+#   This is the GitHub Actions CI/CD pipeline for CampusCart.
+#   On every push to the main branch it does exactly two things:
+#     1. Builds the Docker image and pushes it to Amazon ECR (Job 1)
+#     2. SSHes into the EC2 and runs deploy.sh to swap the live container (Job 2)
+#
+#   The result: a developer runs `git push origin main` and the application
+#   is live on EC2 within 3–5 minutes, with zero manual steps.
+#
+# FILE LOCATION IN REPOSITORY:
+#   .github/workflows/deploy.yml
+#   GitHub discovers workflow files by scanning the .github/workflows/ directory.
+#   The filename can be anything — GitHub reads the `on:` trigger inside.
+#
+# SOLDIERS WHOSE WORK THIS DEPENDS ON:
+#   Soldier 1 — campuscart-backend/Dockerfile  (what we build)
+#   Soldier 2 — EC2 + Elastic IP               (where we deploy)
+#   Soldier 3 — IAM User, ECR repo             (where we push the image)
+#   Soldier 4 — scripts/deploy.sh              (the script we call on EC2)
+#
+# HOW TO READ THIS FILE:
+#   Read from top to bottom. The structure is:
+#     on:    → WHEN does this workflow run?
+#     jobs:  → WHAT does it do? (two jobs, run sequentially)
+#   Every non-obvious line has a comment above it explaining what AND why.
+# ==============================================================================
+
+name: Deploy CampusCart
+# "name" is purely cosmetic — it appears in the GitHub Actions UI tab.
+# If you omit it, GitHub uses the filename. Always name your workflows
+# clearly so you can identify them at a glance in the Actions tab.
+
+
+# ==============================================================================
+# TRIGGER — WHEN DOES THIS WORKFLOW RUN?
+# ==============================================================================
+# The `on:` block defines what GitHub events cause this workflow to execute.
+# GitHub Actions supports dozens of events: push, pull_request, schedule,
+# workflow_dispatch, release, issues, etc.
+#
+# We use two triggers:
+#   1. push to main  → automatic, happens on every developer commit
+#   2. workflow_dispatch → manual, triggered from the GitHub UI
+#
+# WHY NOT trigger on pull_request:
+#   A pull request is "work in progress." We never deploy unreviewed code to
+#   production. Triggering on PR would deploy every branch anyone creates.
+#   Production deployments happen ONLY after code is merged to main.
+#
+# WHY NOT trigger on other branches (dev, staging, etc.):
+#   CampusCart has a single environment — production on one EC2.
+#   A multi-environment setup would have separate workflows for each branch.
+#   For this project, main = production. Simple, correct, explicit.
+
+on:
+  push:
+    branches: [main]
+    # This is an array — you could add [main, production] for multiple branches.
+    # Single brackets [] is YAML inline sequence syntax. Equivalent to:
+    #   branches:
+    #     - main
+    # We use inline for brevity. Both are 100% valid.
+
+  workflow_dispatch:
+    # workflow_dispatch adds a "Run workflow" button to the GitHub Actions UI.
+    # This allows manually triggering the workflow without a git push.
+    #
+    # WHEN IS THIS USEFUL?
+    #   - Emergency re-deploy: EC2 was rebooted, containers are down, you need
+    #     to re-deploy the current main branch right now without a dummy commit.
+    #   - After infrastructure work: Soldier 6 finishes setting up EC2. You want
+    #     to deploy the first time without pushing a code change.
+    #   - Debugging: You changed a GitHub Secret and want to verify the fix
+    #     without touching any application code.
+    #
+    # With no `inputs:` defined (as here), the button shows up with no
+    # configuration options — just "Run workflow" on the main branch.
+    # You can add inputs: if you want manual deployments to accept parameters.
+
+
+# ==============================================================================
+# ENVIRONMENT VARIABLES — WORKFLOW-LEVEL
+# ==============================================================================
+# Variables defined here are available to ALL jobs in this workflow.
+# We define the AWS region and ECR repo name here so they appear in one place.
+# If the region ever changes, update it once here — not scattered across steps.
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  # Reads the AWS_REGION value from GitHub Secrets.
+  # For CampusCart this is "ap-south-1" (Mumbai).
+  # We keep it as a secret (not hardcoded) because if this project is forked
+  # or reused, the new user sets their own region in secrets — code stays the same.
+
+
+# ==============================================================================
+# JOBS
+# ==============================================================================
+# A workflow can have one or many jobs.
+# IMPORTANT: Jobs run IN PARALLEL by default.
+# To run Job 2 AFTER Job 1 finishes, we use `needs:` (see deploy job below).
+#
+# Why two jobs instead of one?
+#   Separation of concerns. Job 1 is "build infrastructure" (runs on GitHub's
+#   servers, needs ECR access). Job 2 is "deploy to production" (needs SSH
+#   access to EC2). They have different concerns, different secrets, different
+#   failure modes. Separating them makes the pipeline readable, debuggable,
+#   and extendable (e.g., you could add a "test" job between them later).
+
+jobs:
+
+  # ============================================================================
+  # JOB 1 — BUILD AND PUSH
+  # ============================================================================
+  # Runs on GitHub's hosted virtual machines (Ubuntu 22.04).
+  # Builds the Django/Daphne Docker image and pushes it to Amazon ECR.
+  # Tags the image with the git commit SHA — the immutable identifier for
+  # this exact version of the code.
+
+  build-and-push:
+    name: Build and Push to ECR
+    # "name" here overrides how this job appears in the GitHub Actions UI.
+    # Without it, GitHub shows the job key (build-and-push). Named for clarity.
+
+    runs-on: ubuntu-latest
+    # `runs-on` specifies the type of machine (runner) GitHub provides to run
+    # this job on. "ubuntu-latest" currently means Ubuntu 22.04.
+    #
+    # GitHub-hosted runners come with many tools pre-installed:
+    #   - Docker Engine + Docker CLI + Docker Compose
+    #   - git, curl, wget
+    #   - AWS CLI v2
+    #   - Node.js, Python, Java, Go
+    # This means we don't need to install Docker or AWS CLI ourselves.
+    #
+    # EACH JOB GETS A FRESH RUNNER:
+    #   The VM is brand new for every job. Nothing from a previous run persists.
+    #   If you push twice within a minute, each push gets a clean VM.
+    #   This is why we can't rely on cached Docker layers without explicit caching.
+    #
+    # SELF-HOSTED vs GITHUB-HOSTED:
+    #   GitHub-hosted = GitHub provides and manages the VM (what we use).
+    #   Self-hosted   = You provide and manage your own machine as a runner.
+    #   Self-hosted is useful when: you need private network access, GPU, or
+    #   specific hardware. For CampusCart, GitHub-hosted is perfect.
+
+    steps:
+    # Steps within a job run SEQUENTIALLY. If any step fails (non-zero exit code),
+    # all subsequent steps are skipped and the job is marked as failed.
+    # The order matters — you can't push to ECR before you build the image.
+
+      # ── STEP 1: CHECKOUT CODE ───────────────────────────────────────────────
+      # When a GitHub Actions runner starts, it has nothing in its workspace.
+      # The runner is a fresh VM — it doesn't have your repository code.
+      # actions/checkout clones the repository into the runner's $GITHUB_WORKSPACE.
+      # Every job that needs source code must start with this step.
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        # `uses:` means we're using a pre-built, reusable GitHub Action.
+        # Format: OWNER/REPO@VERSION
+        #   - actions = the GitHub organization that maintains official actions
+        #   - checkout = the repository name
+        #   - @v4 = the major version tag
+        #
+        # VERSION PINNING — why @v4 and not @main or @latest?
+        #   @v4 is pinned to the major version 4. It automatically receives
+        #   bug fixes and security patches (v4.0.x → v4.1.x) but NOT breaking
+        #   changes (v4 → v5). This gives us security updates without surprise
+        #   breakage. Maximum-security teams pin to the full SHA:
+        #   @11bd71901bbe5b1630ceea73d27597364c9af683
+        #   We use @v4 — the standard practice for most production workflows.
+        #
+        # WHAT IT DOES:
+        #   Runs `git clone` and `git checkout` to put the repository code
+        #   into $GITHUB_WORKSPACE on the runner. Subsequent steps can then
+        #   reference files like ./campuscart-backend/Dockerfile.
+
+      # ── STEP 2: CONFIGURE AWS CREDENTIALS ──────────────────────────────────
+      # Before we can call any AWS API (ECR, SSM, EC2, etc.), the runner needs
+      # AWS credentials configured. This step reads secrets from GitHub's
+      # encrypted secrets store and sets them as environment variables on the runner.
+      #
+      # After this step runs, all subsequent aws CLI commands and Docker ECR
+      # login commands automatically use these credentials — no explicit
+      # --profile or --access-key-id flags needed on each command.
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        # aws-actions is the official AWS GitHub organization.
+        # configure-aws-credentials is their credential-setup action.
+        # @v4 is the latest stable major version.
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # This is a GitHub Actions expression. At runtime, GitHub replaces
+          # this with the actual secret value from the repo's encrypted secret store.
+          #
+          # SECRET MASKING: Even if you accidentally write
+          #   run: echo ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # GitHub will show "***" in the log, never the actual value.
+          # Secrets are stored encrypted using libsodium public-key cryptography.
+          #
+          # WHERE THIS VALUE COMES FROM:
+          #   Soldier 3's security-setup.sh creates the IAM user
+          #   "campuscart-github-actions" and prints its access key ID.
+          #   Soldier 6 takes that printed value and stores it in GitHub Secrets.
+
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # The 40-character secret access key for the campuscart-github-actions
+          # IAM user. Shown ONCE during Soldier 3 execution. Never again.
+          # If lost, you must rotate the key in IAM and update the secret here.
+
+          aws-region: ${{ secrets.AWS_REGION }}
+          # "ap-south-1" — Mumbai. All CampusCart resources live in this region.
+          # This action sets the AWS_DEFAULT_REGION environment variable.
+
+        # WHAT THIS ACTION DOES INTERNALLY:
+        #   Sets these environment variables on the runner:
+        #     AWS_ACCESS_KEY_ID=<value from secret>
+        #     AWS_SECRET_ACCESS_KEY=<value from secret>
+        #     AWS_DEFAULT_REGION=ap-south-1
+        #   All subsequent aws CLI invocations read these automatically.
+        #   It also handles credential cleanup at the end of the job.
+
+      # ── STEP 3: LOGIN TO AMAZON ECR ─────────────────────────────────────────
+      # Docker must authenticate with ECR before it can push images.
+      # ECR uses AWS credentials to generate a short-lived Docker login token.
+      # This step automates the equivalent of:
+      #   TOKEN=$(aws ecr get-login-password --region ap-south-1)
+      #   docker login --username AWS --password "$TOKEN" \
+      #     021859068764.dkr.ecr.ap-south-1.amazonaws.com
+      #
+      # It also outputs the ECR registry URL as a step output variable
+      # so we can reference it in subsequent steps without hardcoding the
+      # AWS account ID.
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        # `id: login-ecr` assigns an identifier to this step.
+        # We reference its outputs in later steps as:
+        #   ${{ steps.login-ecr.outputs.registry }}
+        # Without `id:`, we'd have to hardcode the ECR registry URL.
+        uses: aws-actions/amazon-ecr-login@v2
+        # Official AWS action. Uses the credentials configured in Step 2.
+        # Outputs:
+        #   registry → the ECR registry URL, e.g.:
+        #              021859068764.dkr.ecr.ap-south-1.amazonaws.com
+        # The token is valid for 12 hours — more than enough for our pipeline.
+
+      # ── STEP 4: BUILD DOCKER IMAGE ──────────────────────────────────────────
+      # This is the core build step. GitHub Actions runner runs `docker build`
+      # using the Dockerfile that Soldier 1 created in campuscart-backend/.
+      #
+      # We build two tags:
+      #   1. SHA tag   → the immutable, traceable production identifier
+      #   2. latest tag → for convenience (provision.sh's first-run fallback)
+      #
+      # KEY CONCEPT — github.sha:
+      #   Every workflow run has access to the `github` context object.
+      #   github.sha = the full 40-character git commit SHA that triggered
+      #   this workflow run. Example:
+      #     a3f1c9d2e8b4567890abcdef1234567890abcdef
+      #
+      #   This SHA is the same one passed to deploy.sh in Job 2. The two jobs
+      #   use the same sha because github.sha is consistent within one run.
+      #
+      # WHY SHA TAGS AND NOT "latest"?
+      #   "latest" is not a version — it's a moving pointer. Every push
+      #   overwrites latest. Problems:
+      #     - Rollback: which version is "latest" if you just broke production?
+      #     - Auditability: you can't tell what code is running from the tag name
+      #     - Caching: Docker may not re-pull "latest" if it thinks it has it
+      #   SHA tags solve all three: immutable, traceable, always re-pulled.
+      #   We tag :latest too because provision.sh's first-run fallback uses it.
+      #   But deploy.sh ALWAYS uses the SHA tag — latest is just a convenience.
+
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          # The ECR registry URL output by the login step. Example:
+          #   021859068764.dkr.ecr.ap-south-1.amazonaws.com
+          # Using the step output here means we never hardcode the account ID.
+          IMAGE_TAG: ${{ github.sha }}
+          # The full 40-character git commit SHA. This step's env block makes
+          # it available as $IMAGE_TAG in the run: shell command below.
+          # Using env: in the step (rather than inline ${{ }}) is cleaner
+          # when a value is used multiple times in one shell script block.
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/${{ secrets.ECR_REPO_NAME }}:$IMAGE_TAG \
+            -t $ECR_REGISTRY/${{ secrets.ECR_REPO_NAME }}:latest \
+            ./campuscart-backend
+          # docker build flags explained:
+          #
+          # -t $ECR_REGISTRY/campuscart-web:$IMAGE_TAG
+          #   Tag 1: The immutable SHA tag. This is what deploy.sh will pull.
+          #   Full example:
+          #   021859068764.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web:a3f1c9d2...
+          #
+          # -t $ECR_REGISTRY/campuscart-web:latest
+          #   Tag 2: The latest pointer. Used by provision.sh's first-run
+          #   fallback. NOT used by deploy.sh in subsequent deployments.
+          #   Both tags point to the SAME image — same layers, same binary.
+          #   Tagging the same image twice costs nothing extra.
+          #
+          # ./campuscart-backend
+          #   The BUILD CONTEXT — the directory Docker sends to its daemon.
+          #   Soldier 1's Dockerfile lives at ./campuscart-backend/Dockerfile.
+          #   Docker looks for Dockerfile in the build context root by default.
+          #   The build context is the source code Docker can access during build.
+          #   Paths in Dockerfile COPY instructions are relative to this context.
+          #
+          # WHAT HAPPENS DURING BUILD:
+          #   Docker reads ./campuscart-backend/Dockerfile line by line.
+          #   Each instruction (FROM, RUN, COPY, etc.) creates an image layer.
+          #   The final image is the stack of all layers.
+          #   On GitHub's runner: fresh build every run (no layer cache by default).
+          #   Build time: ~2-4 minutes for a Django image with pip dependencies.
+
+      # ── STEP 5: PUSH TO ECR ─────────────────────────────────────────────────
+      # Push both tags to Amazon ECR. The image now lives in ECR and is
+      # accessible to the EC2 (which pulls from ECR using its IAM role —
+      # no credentials needed on EC2 for this, unlike GitHub Actions which
+      # uses the IAM user credentials).
+      #
+      # WHY TWO SEPARATE docker push COMMANDS?
+      #   Docker tags are metadata — the image binary is stored once.
+      #   When you push a second tag pointing to the same image, Docker only
+      #   uploads the manifest, not the layers (already uploaded from the
+      #   first push). So the second push is near-instantaneous.
+      #
+      # LAYER DEDUPLICATION:
+      #   ECR (like all Docker registries) stores layers by their content hash.
+      #   If a layer already exists in ECR (e.g., the Python base layer hasn't
+      #   changed), Docker skips re-uploading it — "Layer already exists."
+      #   In practice, if you only changed application code:
+      #     - Python base layer: already in ECR → skip
+      #     - pip dependencies layer: already in ECR → skip (deps unchanged)
+      #     - COPY source code layer: new → upload (this is ~1-5MB)
+      #   Total upload: seconds, not minutes. Efficient by design.
+
+      - name: Push to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/${{ secrets.ECR_REPO_NAME }}:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ secrets.ECR_REPO_NAME }}:latest
+          # Push the SHA-tagged image first — this is the primary tag.
+          # deploy.sh will reference this exact SHA when pulling.
+          #
+          # Then push the latest tag — updates the "latest" pointer in ECR.
+          # Same layers, just a new manifest entry. Near-instantaneous.
+          #
+          # After this step, ECR contains:
+          #   campuscart-web:a3f1c9d2e8b4...  ← what Job 2 deploys
+          #   campuscart-web:latest           ← what provision.sh uses
+
+
+  # ============================================================================
+  # JOB 2 — DEPLOY
+  # ============================================================================
+  # Runs AFTER Job 1 succeeds. SSHes into the EC2 and triggers Soldier 4's
+  # deploy.sh with the same git SHA that was used to tag the image in Job 1.
+  # deploy.sh handles the rest: ECR pull, docker compose up, health check.
+  #
+  # This job has NO direct AWS access — it doesn't need it. The EC2 itself
+  # has an IAM role (campuscart-ec2-role) with ECR pull permissions.
+  # GitHub Actions only needs the SSH key to get onto the machine.
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    # Fresh runner again. Nothing from Job 1's runner is available here.
+    # The two jobs run on SEPARATE virtual machines. They communicate only
+    # via the ECR registry — Job 1 pushes the image, Job 2 pulls it on EC2.
+
+    needs: build-and-push
+    # `needs:` creates a job dependency.
+    # This job will ONLY run if the build-and-push job:
+    #   a) Completed (not skipped)
+    #   b) Succeeded (all steps exited 0)
+    #
+    # If build-and-push fails (e.g., docker build fails), the deploy job
+    # is automatically skipped. We never deploy a broken image.
+    # This is the "CD" part of CI/CD being done right — only ship what built.
+    #
+    # You can chain multiple dependencies:
+    #   needs: [build-and-push, run-tests, security-scan]
+    # All listed jobs must succeed before deploy runs.
+    # This is how you'd add a test gate between build and deploy.
+
+    steps:
+
+      # ── STEP 1: CHECKOUT CODE ────────────────────────────────────────────────
+      # Each job gets a fresh runner — no files from Job 1 are available.
+      # We checkout again so the workspace exists and scripts are accessible.
+      # In this pipeline, Job 2 doesn't directly need the source code —
+      # it SSH's into EC2 and runs deploy.sh there. But checkout is a
+      # good practice: it makes the workspace consistent and allows future
+      # steps (e.g., sending a Slack notification with the commit message)
+      # to access git metadata via github context or local git commands.
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── STEP 2: SETUP SSH KEY ────────────────────────────────────────────────
+      # To SSH into EC2, we need the private key that corresponds to the
+      # public key that AWS placed in EC2's ~/.ssh/authorized_keys when the
+      # instance was launched with the "campuscart-key" key pair (Soldier 2).
+      #
+      # The full PEM file content is stored as a GitHub Secret (EC2_SSH_KEY).
+      # We write it to a file and set correct permissions before using it.
+      #
+      # KEY SECURITY MODEL:
+      #   Private key: lives ONLY in GitHub Secrets (encrypted)
+      #   Public key:  lives in EC2's ~/.ssh/authorized_keys
+      #   SSH handshake: the runner proves it has the private key → EC2 grants access
+      #   The private key never travels over the network in plaintext.
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          # Create .ssh directory if it doesn't exist.
+          # mkdir -p = "make parents, no error if exists"
+          # On a fresh GitHub Actions runner, ~/.ssh might not exist.
+          # On most Ubuntu systems it does exist, but -p makes this safe.
+
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/campuscart-key.pem
+          # Write the full PEM file content from GitHub Secrets to a file.
+          #
+          # CRITICAL — EC2_SSH_KEY must contain the FULL FILE CONTENT:
+          #   -----BEGIN RSA PRIVATE KEY-----
+          #   MIIEowIBAAKCAQEA...
+          #   ... (many lines of base64) ...
+          #   -----END RSA PRIVATE KEY-----
+          #
+          # NOT the path to the file. NOT just the filename. The FULL TEXT.
+          # When adding this secret in GitHub: open campuscart-key.pem in a
+          # text editor, select all, copy, paste as the secret value.
+          #
+          # WHY echo and not a multi-line here-doc?
+          #   echo with a double-quoted string preserves newlines from the secret.
+          #   The PEM format requires specific newlines between the base64 blocks.
+          #   GitHub Actions preserves multi-line secret values correctly.
+
+          chmod 400 ~/.ssh/campuscart-key.pem
+          # Set file permissions to "owner read-only" (octal 400).
+          # SSH REQUIREMENT: SSH refuses to use a private key file with
+          # permissions that are "too open" (readable by group or world).
+          # Without chmod 400 you get:
+          #   "WARNING: UNPROTECTED PRIVATE KEY FILE!"
+          #   "Permissions 0644 for 'campuscart-key.pem' are too open."
+          #   "Bad permissions" → connection refused.
+          # chmod 400 = owner can read, nobody else can do anything. SSH accepts this.
+
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          # ssh-keyscan: a utility that fetches SSH host keys from a server.
+          # It connects to the EC2, retrieves its public host key (fingerprint),
+          # and appends it to ~/.ssh/known_hosts in the hashed (-H) format.
+          #
+          # WHY THIS IS NECESSARY:
+          #   The first time you SSH to a new host, SSH asks:
+          #     "The authenticity of host X can't be established.
+          #      Are you sure you want to continue connecting? (yes/no)"
+          #   In an automated pipeline, there is nobody to type "yes."
+          #   The pipeline would hang indefinitely, then time out and fail.
+          #   ssh-keyscan pre-adds the host fingerprint so SSH doesn't ask.
+          #
+          # -H flag: Hash the hostname in known_hosts.
+          #   Instead of writing the plain IP, it writes a hashed version.
+          #   This is a security feature — if known_hosts is leaked, attackers
+          #   can't easily see which hosts you connect to.
+          #
+          # >> (append): Appends to known_hosts, doesn't overwrite it.
+          #   If known_hosts already has entries, they're preserved.
+          #
+          # ALTERNATIVE: -o StrictHostKeyChecking=no
+          #   This SSH option bypasses host verification entirely.
+          #   It's less secure because it makes SSH vulnerable to MITM attacks.
+          #   We use ssh-keyscan instead — it verifies the host key once,
+          #   then trusts it. This is the correct production practice.
+
+      # ── STEP 3: DEPLOY TO EC2 ───────────────────────────────────────────────
+      # SSH into the EC2 and run Soldier 4's deploy.sh script.
+      # This single step is where the deployment actually happens:
+      #   - On EC2: git pull gets the latest docker-compose.prod.yml and scripts
+      #   - On EC2: deploy.sh pulls the new image from ECR
+      #   - On EC2: docker compose replaces the running web container
+      #   - On EC2: health check confirms the new container is serving traffic
+      #   - deploy.sh exits 0 (success) or 1 (failure)
+      #   - SSH command exit code = deploy.sh exit code
+      #   - GitHub Actions marks this step pass or fail based on that exit code
+
+      - name: Deploy to EC2
+        run: |
+          ssh \
+            -i ~/.ssh/campuscart-key.pem \
+            -o StrictHostKeyChecking=no \
+            ubuntu@${{ secrets.EC2_HOST }} \
+            "cd /app/campuscart && \
+             git pull origin main && \
+             ./scripts/deploy.sh ${{ github.sha }}"
+          # Breaking down every part of this command:
+          #
+          # ssh
+          #   The SSH client. Installed on every ubuntu-latest runner.
+          #
+          # -i ~/.ssh/campuscart-key.pem
+          #   Specify the private key file for authentication.
+          #   -i = identity file. Without this, SSH tries default keys
+          #   (~/.ssh/id_rsa, etc.) which don't exist on the fresh runner.
+          #
+          # -o StrictHostKeyChecking=no
+          #   A backup safety option. We already ran ssh-keyscan in Step 2
+          #   to add the host fingerprint to known_hosts. This -o flag is
+          #   a belt-and-suspenders measure in case ssh-keyscan was too slow
+          #   or EC2's IP wasn't in known_hosts format correctly.
+          #   In a more hardened pipeline, you'd remove this and rely
+          #   solely on ssh-keyscan. For this project it's an acceptable tradeoff.
+          #
+          # ubuntu@${{ secrets.EC2_HOST }}
+          #   username: "ubuntu" — the default user for Ubuntu AMIs on EC2.
+          #             It has passwordless sudo rights.
+          #             Never use "root" directly on EC2 Ubuntu — "ubuntu" is correct.
+          #   host:     EC2_HOST = the Elastic IP (e.g., 13.234.56.78)
+          #             This is available only AFTER Soldier 6 runs ec2-launch.sh.
+          #             Elastic IP is static — it doesn't change when EC2 reboots.
+          #             If you used the public IPv4 DNS, it would change on reboot.
+          #
+          # "cd /app/campuscart && git pull origin main && ./scripts/deploy.sh ${{ github.sha }}"
+          #   This entire string runs as a shell command ON THE EC2.
+          #   The && operator: next command runs ONLY if previous succeeded.
+          #   If cd fails → git pull doesn't run → deploy.sh doesn't run.
+          #   If git pull fails → deploy.sh doesn't run.
+          #   Fail-fast chaining — we never deploy from a wrong directory or stale code.
+          #
+          #   cd /app/campuscart
+          #     Navigate to the app directory. Soldier 4's provision.sh cloned
+          #     the repository here. docker-compose.yml lives here.
+          #     All docker compose commands must run from this directory.
+          #
+          #   git pull origin main
+          #     Pull the latest commits from GitHub to the EC2.
+          #     WHY BEFORE deploy.sh?
+          #     If this push updated docker-compose.prod.yml, nginx.conf, or
+          #     any other file on disk, EC2 needs the new version BEFORE
+          #     docker compose reads it. Without git pull, EC2 might still
+          #     have the old docker-compose.prod.yml even though the new
+          #     image expects the new one. git pull → disk matches what's
+          #     in the GitHub repository. Deploy from truth, not from stale cache.
+          #
+          #   ./scripts/deploy.sh ${{ github.sha }}
+          #     Run Soldier 4's deploy script with the git SHA as argument.
+          #     ${{ github.sha }} is the SAME SHA used in Job 1 to tag the image.
+          #     GitHub guarantees github.sha is identical across all jobs in
+          #     one workflow run. So Job 1 pushed image with this SHA,
+          #     Job 2 tells deploy.sh to pull this exact SHA. Perfect match.
+          #
+          #     Inside deploy.sh (Soldier 4):
+          #       1. Validate the SHA argument
+          #       2. Construct ECR URI: ACCOUNT.dkr.ecr.ap-south-1.amazonaws.com/campuscart-web:SHA
+          #       3. Authenticate Docker with ECR (using EC2 IAM role — no credentials needed)
+          #       4. docker pull the new image
+          #       5. export WEB_IMAGE=<full ECR URI with SHA>
+          #       6. docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+          #       7. Poll health for up to 150 seconds
+          #       8. exit 0 (success) or exit 1 (failure)
+          #
+          # EXIT CODE FLOW:
+          #   deploy.sh exits 0 → ssh command exits 0 → GitHub step passes ✅
+          #   deploy.sh exits 1 → ssh command exits 1 → GitHub step fails ❌
+          #   GitHub Actions marks the entire deploy job as failed.
+          #   The developer who pushed gets a GitHub notification email.
+          #   The failed workflow run shows the deploy.sh logs (container logs
+          #   are printed by deploy.sh before it exits 1).
+          #   The previous container version continues running — it was not
+          #   stopped until the new one became healthy. This is the nearest
+          #   thing to zero-downtime deployment on a single-node setup.

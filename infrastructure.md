@@ -22,7 +22,7 @@
 | Property        | Value                        |
 |----------------|------------------------------|
 | Name           | campuscart-vpc               |
-| VPC ID         | `FILL_AFTER_EXECUTION`       |
+| VPC ID         | vpc-04d72783f81e65d0e        |
 | CIDR Block     | 10.0.0.0/16                  |
 | DNS Hostnames  | Enabled                      |
 | DNS Resolution | Enabled                      |
@@ -34,10 +34,10 @@
 
 | Name                      | Subnet ID                | CIDR          | AZ           | Type    | Resources        |
 |--------------------------|--------------------------|---------------|--------------|---------|------------------|
-| campuscart-public-subnet-1  | `FILL_AFTER_EXECUTION` | 10.0.1.0/24   | ap-south-1a  | Public  | EC2 Instance     |
-| campuscart-public-subnet-2  | `FILL_AFTER_EXECUTION` | 10.0.2.0/24   | ap-south-1b  | Public  | Empty (future LB)|
-| campuscart-private-subnet-1 | `FILL_AFTER_EXECUTION` | 10.0.3.0/24   | ap-south-1a  | Private | Empty (future RDS)|
-| campuscart-private-subnet-2 | `FILL_AFTER_EXECUTION` | 10.0.4.0/24   | ap-south-1b  | Private | Empty (future RDS)|
+| campuscart-public-subnet-1  | subnet-07f8b132ea1102700 | 10.0.1.0/24   | ap-south-1a  | Public  | EC2 Instance     |
+| campuscart-public-subnet-2  | subnet-0d6aa711af70cbffa | 10.0.2.0/24   | ap-south-1b  | Public  | Empty (future LB)|
+| campuscart-private-subnet-1 | subnet-0e93b405d8e9ac54e | 10.0.3.0/24   | ap-south-1a  | Private | Empty (future RDS)|
+| campuscart-private-subnet-2 | subnet-0270e4ac70b79513f | 10.0.4.0/24   | ap-south-1b  | Private | Empty (future RDS)|
 
 **Usable IPs per subnet:** 251 (256 total − 5 reserved by AWS)
 
@@ -55,7 +55,7 @@
 | Property   | Value                   |
 |-----------|-------------------------|
 | Name      | campuscart-igw          |
-| IGW ID    | `FILL_AFTER_EXECUTION`  |
+| IGW ID    | igw-0a0ba75205fa16032   |
 | State     | Attached to VPC         |
 | VPC       | campuscart-vpc          |
 
@@ -68,7 +68,7 @@
 | Property    | Value                   |
 |------------|-------------------------|
 | Name       | campuscart-public-rt    |
-| RT ID      | `FILL_AFTER_EXECUTION`  |
+| RT ID      | rtb-02fb721ef7dcc379a |
 | Associated | Public Subnet 1, Public Subnet 2 |
 
 **Routes:**
@@ -83,7 +83,7 @@
 | Property    | Value                   |
 |------------|-------------------------|
 | Name       | campuscart-private-rt   |
-| RT ID      | `FILL_AFTER_EXECUTION`  |
+| RT ID      | rtb-0e6736b493ac4bab4  |
 | Associated | Private Subnet 1, Private Subnet 2 |
 
 **Routes:**
@@ -99,7 +99,7 @@
 | Property         | Value                          |
 |-----------------|--------------------------------|
 | Key Name        | campuscart-key                 |
-| Key ID          | `FILL_AFTER_EXECUTION`         |
+| Key ID          | campuscart-key         |
 | Private Key File| ~/campuscart-key.pem           |
 | Permissions     | 400 (read-only, owner only)    |
 | Algorithm       | RSA                            |
@@ -114,14 +114,14 @@
 | Property        | Value                                      |
 |----------------|--------------------------------------------|
 | Name           | campuscart-ec2                             |
-| Instance ID    | `FILL_AFTER_EXECUTION`                     |
+| Instance ID    | i-0541d779bab1e66c6                     |
 | Instance Type  | t2.micro (1 vCPU, 1GB RAM)                 |
 | AMI            | ami-0f58b397bc5c1f2e8                      |
 | AMI Name       | Ubuntu Server 22.04 LTS (HVM), SSD         |
 | OS             | Ubuntu 22.04 LTS                           |
 | AZ             | ap-south-1a                                |
 | Subnet         | campuscart-public-subnet-1 (10.0.1.0/24)   |
-| Private IP     | `FILL_AFTER_EXECUTION`                     |
+| Private IP     | 10.0.1.63                     |
 | Public IP      | See Elastic IP below (static)              |
 | Security Group | campuscart-sg (created by Soldier 3)       |
 | Key Pair       | campuscart-key                             |
@@ -135,8 +135,8 @@
 | Property       | Value                   |
 |---------------|-------------------------|
 | Name          | campuscart-eip          |
-| Allocation ID | `FILL_AFTER_EXECUTION`  |
-| Public IP     | `FILL_AFTER_EXECUTION`  |
+| Allocation ID | eipalloc-0a527643933464426  |
+| Public IP     | 3.7.189.204  |
 | Associated To | campuscart-ec2          |
 | Domain        | vpc                     |
 
@@ -286,4 +286,4 @@ aws ec2 delete-key-pair --key-name campuscart-key --region ap-south-1
 ---
 
 *Last updated by: Soldier 2*
-*Status: Awaiting Soldier 6 execution — all FILL_AFTER_EXECUTION values pending*
+*Status: Soldier 6 execution complete — all values filled*

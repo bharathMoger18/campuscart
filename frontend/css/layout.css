@@ -1,0 +1,31 @@
+/* css/layout.css - page layout */
+
+main.container {
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+  min-height: calc(100vh - 120px);
+}
+
+#site-footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-3);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.03em;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}

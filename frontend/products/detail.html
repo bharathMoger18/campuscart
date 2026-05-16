@@ -1,34 +1,81 @@
-<!-- products/detail.html -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Product Details — CampusCart</title>
-
     <link rel="stylesheet" href="../css/base.css" />
     <link rel="stylesheet" href="../css/layout.css" />
     <link rel="stylesheet" href="../css/components.css" />
     <link rel="stylesheet" href="../css/theme.css" />
+    <style>
+      .breadcrumb{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--text-3);margin-bottom:2rem}
+      .breadcrumb a{color:var(--text-2);transition:color var(--transition)}
+      .breadcrumb a:hover{color:var(--primary-light)}
+      .product-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start}
+      .media-col{position:sticky;top:6rem}
+      .media-col img{width:100%;border-radius:var(--radius-lg);border:1px solid var(--border);object-fit:cover;max-height:460px;background:var(--bg-2)}
+      .info-col h1{font-family:var(--font-display);font-size:1.9rem;font-weight:800;letter-spacing:-.03em;color:var(--text);margin:0 0 1rem;line-height:1.2}
+      .detail-meta{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem}
+      .detail-price{font-family:var(--font-display);font-size:2rem;font-weight:800;color:var(--primary-light)}
+      .detail-rating{display:flex;align-items:center;gap:.35rem;color:var(--warning);font-size:.9rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);padding:.3rem .75rem;border-radius:999px}
+      .detail-category{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--primary-light);background:var(--primary-glow);border:1px solid rgba(108,99,255,.2);padding:.3rem .75rem;border-radius:999px}
+      .detail-divider{height:1px;background:var(--border);margin:1.25rem 0}
+      .detail-description h3{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:.6rem}
+      .detail-description p{color:var(--text-2);line-height:1.75;font-size:.95rem}
+      .purchase-block{margin-top:1.5rem;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem}
+      .purchase-block label{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:.5rem;display:block}
+      .purchase-row{display:flex;gap:.75rem;align-items:center;margin-bottom:.75rem}
+      .purchase-row input[type=number]{width:90px;padding:.65rem .75rem;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:1rem;font-weight:600;text-align:center}
+      .btn-cart{flex:1;padding:.75rem;font-size:1rem}
+      .btn-chat{width:100%;padding:.7rem;margin-top:.5rem;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-2);border-radius:var(--radius-sm);cursor:pointer;font-weight:600;transition:all var(--transition);font-size:.95rem;font-family:var(--font-body)}
+      .btn-chat:hover{border-color:var(--primary);color:var(--primary-light);background:var(--primary-glow)}
+      .reviews-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border)}
+      .reviews-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+      .reviews-header h3{font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--text)}
+      .review-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem;margin-bottom:.75rem;transition:border-color var(--transition)}
+      .review-item:hover{border-color:rgba(108,99,255,.25)}
+      .review-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+      .review-head strong{color:var(--text);font-size:.95rem}
+      .review-head .rating{color:var(--warning);font-size:.85rem;background:rgba(245,158,11,.1);padding:.2rem .6rem;border-radius:999px}
+      .review-body{color:var(--text-2);font-size:.9rem;line-height:1.6}
+      @media(max-width:768px){
+        .product-detail-grid{grid-template-columns:1fr;gap:1.5rem}
+        .media-col{position:static}
+        .info-col h1{font-size:1.5rem}
+        .detail-price{font-size:1.6rem}
+      }
+    </style>
   </head>
   <body>
     <header id="site-navbar"></header>
-
     <main class="container">
+      <nav class="breadcrumb">
+        <a href="/index.html">Home</a>
+        <span>›</span>
+        <a href="/index.html">Products</a>
+        <span>›</span>
+        <span id="breadcrumbTitle">Loading...</span>
+      </nav>
       <div id="productDetail" class="product-detail">
-        <!-- Content populated by js -->
         <div class="loading">Loading product...</div>
       </div>
-
       <section id="reviewsSection" class="reviews-section">
-        <h3>Reviews</h3>
+        <div class="reviews-header">
+          <h3>Customer Reviews</h3>
+        </div>
         <div id="reviewsList"></div>
       </section>
     </main>
-
     <footer id="site-footer"></footer>
-
     <script type="module" src="../js/main.js"></script>
     <script type="module" src="../js/product_detail.js"></script>
+    <script>
+      const obs = new MutationObserver(() => {
+        const h1 = document.querySelector('.info-col h1');
+        if (h1) { document.getElementById('breadcrumbTitle').textContent = h1.textContent; obs.disconnect(); }
+      });
+      obs.observe(document.getElementById('productDetail'), { childList: true, subtree: true });
+    </script>
   </body>
 </html>

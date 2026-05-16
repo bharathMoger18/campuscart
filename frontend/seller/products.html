@@ -3,154 +3,52 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Products | CampusCart</title>
-    <link rel="stylesheet" href="../css/base.css" />
-    <link rel="stylesheet" href="../css/layout.css" />
-    <link rel="stylesheet" href="../css/components.css" />
-    <link rel="stylesheet" href="../css/theme.css" />
-
+    <title>My Products — CampusCart</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/components.css" />
+    <link rel="stylesheet" href="/css/theme.css" />
+    <script type="module" src="/js/main.js" defer></script>
+    <script type="module" src="/seller/js/products.js" defer></script>
     <style>
-      body {
-        font-family: 'Segoe UI', sans-serif;
-        background: #f8fafc;
-        margin: 0;
-        padding: 0;
-        color: #333;
-      }
-
-      .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1.5rem 2rem;
-        background: white;
-        border-bottom: 2px solid #eef2f7;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      }
-
-      .page-header h1 {
-        margin: 0;
-        font-size: 1.8rem;
-        color: #222;
-      }
-
-      .btn-primary {
-        background-color: #2563eb;
-        color: #fff;
-        border: none;
-        padding: 0.7rem 1.3rem;
-        border-radius: 8px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.25s ease;
-        text-decoration: none;
-      }
-
-      .btn-primary:hover {
-        background-color: #1d4ed8;
-      }
-
-      .product-list-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-        gap: 1.5rem;
-        padding: 2rem;
-      }
-
-      .product-card {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-
-      .product-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-      }
-
-      .product-card img {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-      }
-
-      .product-info {
-        padding: 1rem;
-      }
-
-      .product-info h3 {
-        margin: 0;
-        font-size: 1.1rem;
-        color: #111;
-      }
-
-      .product-info p {
-        margin: 0.3rem 0 0.8rem;
-        color: #666;
-        font-size: 0.9rem;
-      }
-
-      .product-actions {
-        display: flex;
-        justify-content: space-between;
-      }
-
-      .btn-edit,
-      .btn-delete {
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.85rem;
-        transition: all 0.2s ease;
-      }
-
-      .btn-edit {
-        background: #16a34a;
-        color: white;
-      }
-
-      .btn-edit:hover {
-        background: #15803d;
-      }
-
-      .btn-delete {
-        background: #dc2626;
-        color: white;
-      }
-
-      .btn-delete:hover {
-        background: #b91c1c;
-      }
-
-      .loading {
-        text-align: center;
-        padding: 3rem;
-        font-size: 1.1rem;
-        color: #888;
-      }
+      .page-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem}
+      .page-header h1{font-family:var(--font-display);font-size:1.8rem;font-weight:800;letter-spacing:-.03em;color:var(--text)}
+      .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem}
+      .seller-product-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:all var(--transition)}
+      .seller-product-card:hover{border-color:rgba(108,99,255,.3);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.3)}
+      .seller-product-card img{width:100%;height:180px;object-fit:cover;display:block;background:var(--bg-2)}
+      .seller-product-info{padding:1rem}
+      .seller-product-info h3{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text);margin:0 0 .4rem}
+      .seller-product-info .price{color:var(--primary-light);font-weight:700;font-family:var(--font-display);font-size:1rem}
+      .seller-product-info .category{font-size:.75rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-top:.25rem}
+      .seller-product-info .avail{display:inline-block;margin-top:.5rem;font-size:.75rem;font-weight:600;padding:.2rem .6rem;border-radius:999px}
+      .avail.yes{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+      .avail.no{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+      .seller-product-actions{display:flex;gap:.5rem;padding:.75rem 1rem;border-top:1px solid var(--border)}
+      .seller-product-actions .btn{flex:1;padding:.45rem;font-size:.82rem}
+      .btn-edit-p{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#4ade80;border-radius:var(--radius-sm);cursor:pointer;font-weight:600;transition:all var(--transition);font-family:var(--font-body)}
+      .btn-edit-p:hover{background:rgba(34,197,94,.2)}
+      .btn-delete-p{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;border-radius:var(--radius-sm);cursor:pointer;font-weight:600;transition:all var(--transition);font-family:var(--font-body)}
+      .btn-delete-p:hover{background:rgba(239,68,68,.2)}
+      .empty-products{text-align:center;padding:4rem 2rem;color:var(--text-3)}
+      .empty-products .empty-icon{font-size:3rem;margin-bottom:1rem}
+      .empty-products h2{font-family:var(--font-display);font-size:1.3rem;color:var(--text);margin-bottom:.5rem}
     </style>
   </head>
-
   <body>
-    <div id="app">
-      <header class="page-header">
+    <header id="site-navbar"></header>
+    <main class="container">
+      <div class="page-header">
         <h1>My Products</h1>
-        <a href="/../products/create.html" class="btn-primary"
-          >+ Add New Product</a
-        >
-      </header>
-
-      <main id="productListContainer" class="product-list-container">
+        <div style="display:flex;gap:.5rem">
+          <a href="/seller/dashboard.html" class="btn btn-ghost">&#8592; Dashboard</a>
+          <a href="/products/create.html" class="btn btn-primary">+ Add Product</a>
+        </div>
+      </div>
+      <div id="productListContainer" class="products-grid">
         <div class="loading">Loading your products...</div>
-      </main>
-    </div>
-
-    <script type="module" src="../js/core/api.js"></script>
-    <script type="module" src="../js/core/utils.js"></script>
-    <script type="module" src="../js/core/storage.js"></script>
-    <script type="module" src="./js/products.js"></script>
+      </div>
+    </main>
+    <footer id="site-footer"></footer>
   </body>
 </html>

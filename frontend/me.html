@@ -5,47 +5,89 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>My Profile — CampusCart</title>
     <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/auth.css" />
+    <style>
+      main.container { max-width: 600px; padding-top: 2.5rem; }
+      .profile-avatar { width:72px; height:72px; border-radius:50%; background:var(--primary-glow); border:2px solid rgba(108,99,255,.3); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:1.8rem; font-weight:800; color:var(--primary-light); margin:0 auto 1.25rem; }
+      .profile-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:2rem; text-align:center; }
+      .profile-name { font-family:var(--font-display); font-size:1.5rem; font-weight:800; color:var(--text); margin-bottom:.25rem; }
+      .profile-email { color:var(--text-3); font-size:.9rem; margin-bottom:1.5rem; }
+      .profile-fields { display:flex; flex-direction:column; gap:.75rem; text-align:left; margin-bottom:1.5rem; }
+      .profile-field { display:flex; justify-content:space-between; align-items:center; padding:.75rem 1rem; background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius-sm); }
+      .profile-field .field-label { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-3); }
+      .profile-field .field-value { font-size:.9rem; font-weight:600; color:var(--text); }
+      .profile-actions { display:flex; gap:.75rem; flex-direction:column; }
+      .profile-actions .btn { width:100%; padding:.8rem; font-size:.95rem; }
+      .seller-badge { display:inline-flex; align-items:center; gap:.4rem; background:var(--primary-glow); border:1px solid rgba(108,99,255,.2); color:var(--primary-light); font-size:.78rem; font-weight:600; padding:.3rem .75rem; border-radius:999px; margin-bottom:1rem; }
+    </style>
   </head>
   <body>
+    <header id="site-navbar"></header>
     <main class="container">
-      <div style="max-width: 720px; margin: 3rem auto">
-        <h1>My Profile</h1>
-        <div id="profileCard" class="auth-card">
-          <p>Loading profile...</p>
-        </div>
+      <div class="profile-card" id="profileCard">
+        <div class="loading">Loading profile...</div>
       </div>
     </main>
-
+    <footer id="site-footer"></footer>
+    <script type="module" src="js/main.js"></script>
     <script type="module">
       import { getProfile, logout } from './js/core/auth.js';
       import { showAlert, redirectTo } from './js/core/utils.js';
+      import * as storage from './js/core/storage.js';
 
       async function run() {
         try {
-          const profile = await getProfile();
-          const el = document.getElementById('profileCard');
-          el.innerHTML = `
-          <p><strong>Name:</strong> ${profile.name}</p>
-          <p><strong>Email:</strong> ${profile.email}</p>
-          <p><strong>Campus:</strong> ${profile.campus || '—'}</p>
-          <p><strong>Phone:</strong> ${profile.phone || '—'}</p>
-          <p><strong>Joined:</strong> ${new Date(
-            profile.date_joined
-          ).toLocaleString()}</p>
-          <div style="margin-top:1rem;">
-            <button id="logoutBtn" class="btn btn-ghost">Logout</button>
-          </div>
-        `;
+          const p = await getProfile();
+          const initial = (p.name || p.email || '?')[0].toUpperCase();
+          const joined = new Date(p.date_joined).toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'});
+
+          document.getElementById('profileCard').innerHTML = `
+            <div class="profile-avatar">${initial}</div>
+            <div class="profile-name">${escapeHtml(p.name || 'User')}</div>
+            <div class="profile-email">${escapeHtml(p.email)}</div>
+            <div class="seller-badge">⭐ Seller Rating: ${p.seller_rating ?? '0.0'}</div>
+            <div class="profile-fields">
+              <div class="profile-field">
+                <span class="field-label">Campus</span>
+                <span class="field-value">${escapeHtml(p.campus || '—')}</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">Phone</span>
+                <span class="field-value">${escapeHtml(p.phone || '—')}</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">Member Since</span>
+                <span class="field-value">${joined}</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">Total Reviews</span>
+                <span class="field-value">${p.total_reviews ?? 0}</span>
+              </div>
+            </div>
+            <div class="profile-actions">
+              <a href="/seller/dashboard.html" class="btn btn-ghost">Seller Dashboard</a>
+              <button id="logoutBtn" class="btn btn-danger">Logout</button>
+            </div>
+          `;
+
           document.getElementById('logoutBtn').addEventListener('click', () => {
-            logout();
-            redirectTo('login.html');
+            storage.clearTokens();
+            showAlert('Logged out successfully.', 'info');
+            setTimeout(() => window.location.href = '/login.html', 800);
           });
-        } catch (err) {
+        } catch {
           showAlert('Session expired. Please log in again.', 'error');
-          redirectTo('login.html', 800);
+          setTimeout(() => window.location.href = '/login.html', 800);
         }
       }
+
+      function escapeHtml(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+      }
+
       run();
     </script>
   </body>

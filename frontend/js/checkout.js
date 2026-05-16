@@ -1,126 +1,70 @@
-// /frontend/js/checkout.js
 import { api } from './core/api.js';
-import {
-  showAlert,
-  showLoader,
-  hideLoader,
-  parseErrors,
-  redirectTo,
-} from './core/utils.js';
+import { showAlert } from './core/utils.js';
 
-const summary = document.getElementById('checkoutSummary');
-const btn = document.getElementById('placeOrderBtn');
-const addressInput = document.getElementById('address');
-const paymentSelect = document.getElementById('payment');
-const cardSection = document.getElementById('cardSection');
+const checkoutSummary = document.getElementById('checkoutSummary');
+const placeOrderBtn = document.getElementById('placeOrderBtn');
 
-paymentSelect.addEventListener('change', () => {
-  if (paymentSelect.value === 'card') cardSection.classList.add('visible');
-  else cardSection.classList.remove('visible');
+document.addEventListener('DOMContentLoaded', () => {
+  loadCheckoutSummary();
+  placeOrderBtn?.addEventListener('click', placeOrder);
 });
 
-async function loadSummary() {
+async function loadCheckoutSummary() {
   try {
     const cart = await api.get('/cart/');
     if (!cart.items?.length) {
-      summary.innerHTML = `<p class="empty">Your cart is empty.</p>`;
-      btn.disabled = true;
+      checkoutSummary.innerHTML = `<div class="empty">Your cart is empty.</div>`;
+      if (placeOrderBtn) placeOrderBtn.disabled = true;
       return;
     }
-
-    summary.classList.remove('loading');
-    summary.innerHTML = `
-      <div class="cart-table">
-        ${cart.items
-          .map(
-            (i) => `
-          <div class="cart-row">
-            <div class="cart-product">
-              <img src="${
-                i.product.image
-                  ? i.product.image
-                      /^\/?media\//,
-                      ''
-                    )}`
-                  : '/assets/images/noimg.png'
-              }" alt="${i.product.title}">
-              <span>${i.product.title}</span>
-            </div>
-            <div class="price">₹${i.product.price}</div>
-            <div>x${i.quantity}</div>
-            <div class="price">₹${i.total_price}</div>
-          </div>`
-          )
-          .join('')}
+    const itemsHtml = cart.items.map(it => `
+      <div class="checkout-item">
+        <img src="${it.product.image || '/assets/images/placeholder.png'}" alt="${escapeHtml(it.product.title)}" />
+        <div class="checkout-item-info">
+          <strong>${escapeHtml(it.product.title)}</strong>
+          <span>Qty: ${it.quantity}</span>
+        </div>
+        <div class="checkout-item-price">&#8377;${it.total_price}</div>
       </div>
-      <div class="cart-summary">
-        <div>Total: ₹${cart.total_price}</div>
+    `).join('');
+
+    checkoutSummary.innerHTML = `
+      ${itemsHtml}
+      <div class="checkout-total-row">
+        <span>Total (${cart.total_items} items)</span>
+        <span>&#8377;${cart.total_price}</span>
       </div>
     `;
   } catch (err) {
-    summary.innerHTML = `<p class="empty">Failed to load cart.</p>`;
+    checkoutSummary.innerHTML = `<div class="empty">Unable to load summary.</div>`;
   }
 }
 
-btn.addEventListener('click', async () => {
-  const address = addressInput.value.trim();
-  const payment_method = paymentSelect.value;
+async function placeOrder() {
+  const address = document.getElementById('address').value.trim();
+  const payment = document.querySelector('input[name=payment]:checked')?.value || 'cod';
 
-  if (!address) return showAlert('Please enter shipping address.', 'error');
+  if (!address) {
+    showAlert('Please enter your shipping address.', 'error');
+    return;
+  }
 
-  btn.disabled = true;
-  btn.textContent = 'Processing...';
-  showLoader(btn);
+  placeOrderBtn.disabled = true;
+  placeOrderBtn.textContent = 'Placing Order...';
 
   try {
-    // 🧾 Step 1: Create the order
-    const response = await api.post('/orders/create/', {
-      address,
-      payment_method,
-    });
-
-    const order = Array.isArray(response) ? response[0] : response;
-    const orderId = order?.id;
-
-    if (!orderId) {
-      showAlert('Order ID not received from server.', 'error');
-      return;
-    }
-
-    // 💵 Step 2: Handle COD (immediate redirect)
-    if (payment_method === 'cod') {
-      showAlert('Order placed successfully (Cash on Delivery).', 'success');
-      redirectTo(`./order_detail.html?id=${orderId}`, 1000);
-      return;
-    }
-
-    // 💳 Step 3: Handle Online Payment via Stripe Checkout
-    const cart = await api.get('/cart/');
-    const totalAmount = cart?.total_price
-      ? Math.round(cart.total_price * 100) // convert ₹ to cents
-      : 5000;
-
-    const session = await api.post('/payments/create-checkout-session/', {
-      order_id: orderId,
-      amount: totalAmount,
-      product_name: `Order #${orderId}`,
-    });
-
-    if (session?.url) {
-      // ✅ Redirect to Stripe Checkout
-      window.location.href = session.url;
-    } else {
-      showAlert('Failed to initialize payment session.', 'error');
-    }
+    await api.post('/orders/create/', { address, payment_method: payment });
+    showAlert('Order placed successfully!', 'success');
+    setTimeout(() => window.location.href = '/orders/my_orders.html', 1000);
   } catch (err) {
-    console.error('Order creation failed:', err);
-    const msg = parseErrors(err.data);
-    showAlert(msg || 'Failed to place order.', 'error');
+    showAlert(err?.data?.detail || 'Failed to place order.', 'error');
   } finally {
-    hideLoader(btn);
-    btn.disabled = false;
-    btn.textContent = 'Place Order';
+    placeOrderBtn.disabled = false;
+    placeOrderBtn.textContent = 'Place Order →';
   }
-});
+}
 
-loadSummary();
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}

@@ -4,22 +4,48 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Order Details — CampusCart</title>
-
-    <link rel="stylesheet" href="../css/base.css" />
-    <link rel="stylesheet" href="../css/layout.css" />
-    <link rel="stylesheet" href="../css/components.css" />
-    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/components.css" />
+    <style>
+      .page-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem}
+      .page-header h1{font-family:var(--font-display);font-size:1.8rem;font-weight:800;letter-spacing:-.03em;color:var(--text)}
+      .order-grid{display:grid;grid-template-columns:1fr 320px;gap:1.5rem;align-items:start}
+      .dash-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.25rem}
+      .dash-card h3{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text);margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}
+      .order-item{display:flex;gap:.75rem;align-items:center;padding:.75rem 0;border-bottom:1px solid var(--border)}
+      .order-item:last-child{border-bottom:none}
+      .order-item img{width:60px;height:60px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-2)}
+      .order-item-info{flex:1}
+      .order-item-info strong{display:block;color:var(--text);font-size:.9rem}
+      .order-item-info span{color:var(--text-3);font-size:.82rem}
+      .order-item-price{font-family:var(--font-display);font-weight:700;color:var(--primary-light)}
+      .info-row{display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border);font-size:.88rem}
+      .info-row:last-child{border-bottom:none}
+      .info-row span:first-child{color:var(--text-3);font-weight:600}
+      .info-row span:last-child{color:var(--text);font-weight:600;text-align:right}
+      .order-actions{display:flex;flex-direction:column;gap:.5rem;margin-top:1rem}
+      .order-actions .btn{width:100%;padding:.7rem;font-size:.9rem}
+      .status-badge{display:inline-block;padding:.3rem .8rem;border-radius:999px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+      .status-pending{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2)}
+      .status-paid{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+      .status-shipped{background:rgba(108,99,255,.12);color:var(--primary-light);border:1px solid rgba(108,99,255,.2)}
+      .status-delivered{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+      .status-cancelled{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+      @media(max-width:768px){.order-grid{grid-template-columns:1fr}}
+    </style>
   </head>
   <body>
     <header id="site-navbar"></header>
-
     <main class="container">
+      <div class="page-header">
+        <h1>Order Details</h1>
+        <a class="btn btn-ghost" href="/orders/my_orders.html">&#8592; My Orders</a>
+      </div>
       <section id="orderDetail" class="loading">Loading order...</section>
     </main>
-
     <footer id="site-footer"></footer>
-
-    <script type="module" src="../js/main.js"></script>
-    <script type="module" src="./js/order_detail.js"></script>
+    <script type="module" src="/js/main.js"></script>
+    <script type="module" src="/orders/js/order_detail.js"></script>
   </body>
 </html>

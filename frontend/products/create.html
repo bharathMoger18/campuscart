@@ -3,159 +3,133 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Create or Edit Product</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./../css/components.css" />
-    <!-- <link rel="stylesheet" href="css/components.css" /> -->
-    <!-- <link rel="stylesheet" href="css/auth.css" /> -->
+    <title>Create Product — CampusCart</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/components.css" />
+    <link rel="stylesheet" href="/css/auth.css" />
+    <style>
+      main.container { max-width: 600px; padding-top: 2rem; }
+      .create-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:2rem; }
+      .create-card h1 { font-family:var(--font-display); font-size:1.5rem; font-weight:800; color:var(--text); margin-bottom:1.5rem; letter-spacing:-.02em; }
+      .image-preview { width:100%; height:180px; border:2px dashed var(--border); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--text-3); font-size:.9rem; cursor:pointer; transition:border-color var(--transition); overflow:hidden; background:var(--bg-3); margin-bottom:.5rem; }
+      .image-preview:hover { border-color:var(--primary); }
+      .image-preview img { width:100%; height:100%; object-fit:cover; }
+      input[type=file] { display:none; }
+      .form-actions { display:flex; gap:.75rem; margin-top:1.25rem; }
+      .form-actions .btn { flex:1; padding:.8rem; font-size:.95rem; }
+    </style>
   </head>
-  <body
-    class="bg-gray-100 min-h-screen flex flex-col items-center justify-center"
-  >
-    <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-lg">
-      <h2
-        id="page-title"
-        class="text-2xl font-bold mb-6 text-center text-gray-700"
-      >
-        Add New Product
-      </h2>
-
-      <form id="product-form" class="space-y-4">
-        <div>
-          <label class="block text-gray-700 font-semibold">Title</label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            class="w-full border border-gray-300 rounded p-2"
-            required
-          />
-        </div>
-
-        <div>
-          <label class="block text-gray-700 font-semibold">Description</label>
-          <textarea
-            id="description"
-            name="description"
-            class="w-full border border-gray-300 rounded p-2"
-            required
-          ></textarea>
-        </div>
-
-        <div>
-          <label class="block text-gray-700 font-semibold">Category</label>
-          <select
-            id="category"
-            name="category"
-            class="w-full border border-gray-300 rounded p-2"
-            required
-          >
-            <option value="">-- Select Category --</option>
-            <option value="Books">Books</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Clothing">Clothing</option>
-            <option value="Accessories">Accessories</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-gray-700 font-semibold">Price (₹)</label>
-          <input
-            type="number"
-            id="price"
-            name="price"
-            class="w-full border border-gray-300 rounded p-2"
-            required
-          />
-        </div>
-
-        <div>
-          <label class="block text-gray-700 font-semibold">Available?</label>
-          <select
-            id="is_available"
-            name="is_available"
-            class="w-full border border-gray-300 rounded p-2"
-          >
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-gray-700 font-semibold">Image</label>
-          <input
-            type="file"
-            id="image"
-            name="image"
-            accept="image/*"
-            class="w-full border border-gray-300 rounded p-2"
-          />
-        </div>
-
-        <button
-          type="submit"
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded transition"
-        >
-          Save Product
-        </button>
-      </form>
-    </div>
-
+  <body>
+    <header id="site-navbar"></header>
+    <main class="container">
+      <div class="create-card">
+        <h1 id="pageTitle">Add New Product</h1>
+        <form id="productForm" novalidate>
+          <div class="form-group">
+            <label>Product Image</label>
+            <div class="image-preview" id="imagePreview" onclick="document.getElementById('imageInput').click()">
+              <span>Click to upload image</span>
+            </div>
+            <input type="file" id="imageInput" name="image" accept="image/*" />
+          </div>
+          <div class="form-group">
+            <label for="title">Title *</label>
+            <input type="text" id="title" name="title" placeholder="e.g. Python Programming Book" required />
+          </div>
+          <div class="form-group">
+            <label for="description">Description *</label>
+            <textarea id="description" name="description" rows="3" placeholder="Describe your product..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="category">Category *</label>
+            <select id="category" name="category" required>
+              <option value="">-- Select Category --</option>
+              <option value="Books">Books</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="price">Price (₹) *</label>
+            <input type="number" id="price" name="price" placeholder="e.g. 299" required />
+          </div>
+          <div class="form-group">
+            <label for="is_available">Availability</label>
+            <select id="is_available" name="is_available">
+              <option value="true">Available</option>
+              <option value="false">Not Available</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <a href="/seller/products.html" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary" id="submitBtn">Save Product</button>
+          </div>
+        </form>
+      </div>
+    </main>
+    <footer id="site-footer"></footer>
+    <script type="module" src="/js/main.js"></script>
     <script type="module">
-      import { api } from '../js/core/api.js';
-      import { showAlert, redirectTo } from '../js/core/utils.js';
+      import { api } from '/js/core/api.js';
+      import { showAlert } from '/js/core/utils.js';
 
       const params = new URLSearchParams(window.location.search);
       const editId = params.get('id');
-      const form = document.getElementById('product-form');
-      const pageTitle = document.getElementById('page-title');
+      const form = document.getElementById('productForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const imageInput = document.getElementById('imageInput');
+      const imagePreview = document.getElementById('imagePreview');
 
       if (editId) {
-        pageTitle.textContent = 'Edit Product';
+        document.getElementById('pageTitle').textContent = 'Edit Product';
+        submitBtn.textContent = 'Update Product';
         loadProduct();
       }
 
+      imageInput.addEventListener('change', () => {
+        const file = imageInput.files[0];
+        if (file) {
+          const url = URL.createObjectURL(file);
+          imagePreview.innerHTML = `<img src="${url}" />`;
+        }
+      });
+
       async function loadProduct() {
         try {
-          const product = await api.get(`/products/${editId}/`);
-          document.getElementById('title').value = product.title || '';
-          document.getElementById('description').value =
-            product.description || '';
-          document.getElementById('category').value = product.category || '';
-          document.getElementById('price').value = product.price || '';
-          document.getElementById('is_available').value = String(
-            product.is_available
-          );
-        } catch (err) {
-          console.error(err);
-          showAlert('❌ Failed to load product details', 'error');
-        }
+          const p = await api.get(`/products/${editId}/`);
+          document.getElementById('title').value = p.title || '';
+          document.getElementById('description').value = p.description || '';
+          document.getElementById('category').value = p.category || '';
+          document.getElementById('price').value = p.price || '';
+          document.getElementById('is_available').value = String(p.is_available);
+          if (p.image) imagePreview.innerHTML = `<img src="${p.image}" />`;
+        } catch { showAlert('Failed to load product.', 'error'); }
       }
 
-      form.addEventListener('submit', async (e) => {
+      form.addEventListener('submit', async e => {
         e.preventDefault();
-
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
         const formData = new FormData(form);
-        const image = document.getElementById('image').files[0];
-        if (image) formData.append('image', image);
-
+        const image = imageInput.files[0];
+        if (image) formData.set('image', image);
         try {
           if (editId) {
             await api.patch(`/products/${editId}/`, formData);
-            showAlert('✅ Product updated successfully', 'success');
+            showAlert('Product updated!', 'success');
           } else {
             await api.post('/products/', formData);
-            showAlert('✅ Product created successfully', 'success');
+            showAlert('Product created!', 'success');
           }
-          redirectTo('/seller/products.html', 1000);
+          setTimeout(() => window.location.href = '/seller/products.html', 1000);
         } catch (err) {
-          console.error(err);
-          const msg = err.data?.detail || '❌ Failed to save product';
-          showAlert(msg, 'error');
+          showAlert(err.data?.detail || 'Failed to save product.', 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = editId ? 'Update Product' : 'Save Product';
         }
       });
     </script>

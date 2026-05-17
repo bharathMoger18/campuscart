@@ -1,222 +1,169 @@
-// frontend/seller/js/dashboard.js
 import { api } from '../../js/core/api.js';
 import { showAlert } from '../../js/core/utils.js';
 
 async function fetchDashboard() {
   const res = await api.get('/orders/seller/dashboard/');
-  console.log('🟢 /orders/seller/dashboard/ response:', res);
   return res;
 }
 
 async function fetchSellerOrders() {
-  try {
-    const res = await api.get('/orders/seller/orders/');
-    console.log('🟢 /orders/seller/orders/ response:', res);
-    return res;
-  } catch (e) {
-    console.error('🔴 Error fetching seller orders:', e);
-    return [];
-  }
+  try { return await api.get('/orders/seller/orders/'); }
+  catch { return []; }
 }
 
 async function fetchSellerProducts() {
-  try {
-    const res = await api.get('/seller/products/');
-    console.log('🟢 /seller/products/ response:', res);
-    return res;
-  } catch (e) {
-    console.error('🔴 Error fetching seller products:', e);
-    return [];
-  }
+  try { return await api.get('/seller/products/'); }
+  catch { return []; }
 }
 
 function formatCurrency(v) {
   const n = Number(v ?? 0);
-  if (Number.isNaN(n)) return '₹0.00';
-  return `₹${n.toFixed(2)}`;
+  return isNaN(n) ? '₹0.00' : `₹${n.toFixed(2)}`;
 }
 
 function statusToBadgeClass(status) {
   if (!status) return 'status-pending';
   const s = String(status).toLowerCase();
-  if (s.includes('pending')) return 'status-pending';
   if (s.includes('paid')) return 'status-paid';
   if (s.includes('shipped')) return 'status-shipped';
   if (s.includes('delivered')) return 'status-delivered';
   if (s.includes('cancel')) return 'status-cancelled';
-  if (s.includes('refund_requested')) return 'status-refund_requested';
-  if (s.includes('refunded')) return 'status-refunded';
+  if (s.includes('refund')) return 'status-refund_requested';
   return 'status-pending';
 }
 
 function escapeHtml(s) {
   if (!s) return '';
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
 function renderTopProducts(list) {
   const container = document.getElementById('topProducts');
   if (!container) return;
   if (!Array.isArray(list) || !list.length) {
-    container.innerHTML = `<div style="color:#6b7280">No top products</div>`;
+    container.innerHTML = `<div style="color:var(--text-3);font-size:.85rem">No top products yet</div>`;
     return;
   }
-  container.innerHTML = list
-    .slice(0, 6)
-    .map((p) => {
-      const img = p.image ? p.image : '/assets/images/placeholder.png';
-      const revenue = Number(p.total_revenue ?? p.totalRevenue ?? 0);
-      const qty = Number(p.total_quantity ?? p.totalQuantity ?? 0);
-      const title = escapeHtml(p.title || p.product_title || 'Product');
-      return `
-        <div class="top-product">
-          <img src="${img}" alt="${title}" onerror="this.src='/assets/images/placeholder.png'">
-          <div>
-            <div style="font-weight:700">${title}</div>
-            <div style="font-size:0.9rem; color:#6b7280;">Qty: ${qty} • ${formatCurrency(
-        revenue
-      )}</div>
-          </div>
+  container.innerHTML = list.slice(0, 5).map(p => {
+    const img = p.image || '/assets/images/placeholder.png';
+    const title = escapeHtml(p.title || p.product_title || 'Product');
+    const revenue = Number(p.total_revenue ?? 0);
+    const qty = Number(p.total_quantity ?? 0);
+    return `
+      <div class="top-product">
+        <img src="${img}" alt="${title}" onerror="this.src='/assets/images/placeholder.png'">
+        <div class="top-product-info">
+          <div class="top-product-title">${title}</div>
+          <div class="top-product-meta">Qty: ${qty} • ${formatCurrency(revenue)}</div>
         </div>
-      `;
-    })
-    .join('');
+      </div>`;
+  }).join('');
 }
 
 function renderRefundsSummary(refunds) {
   const el = document.getElementById('refundsSummary');
   if (!el) return;
-  if (!refunds) {
-    el.textContent = 'No refund data';
-    return;
-  }
+  if (!refunds) { el.innerHTML = '<div style="color:var(--text-3)">No refund data</div>'; return; }
   el.innerHTML = `
-    <div style="display:flex; flex-direction:column; gap:0.35rem;">
-      <div><strong>Total requests:</strong> ${refunds.total_requests ?? 0}</div>
-      <div><strong>Approved:</strong> ${refunds.approved ?? 0}</div>
-      <div><strong>Rejected:</strong> ${refunds.rejected ?? 0}</div>
-      <div><strong>Refunded amount:</strong> ${formatCurrency(
-        refunds.refunded_amount ?? 0
-      )}</div>
-      <div><strong>Refund rate:</strong> ${(refunds.refund_rate ?? 0).toFixed(
-        2
-      )}%</div>
-    </div>
+    <div class="refund-row"><span>Total requests</span><span>${refunds.total_requests ?? 0}</span></div>
+    <div class="refund-row"><span>Approved</span><span>${refunds.approved ?? 0}</span></div>
+    <div class="refund-row"><span>Rejected</span><span>${refunds.rejected ?? 0}</span></div>
+    <div class="refund-row"><span>Refunded amount</span><span>${formatCurrency(refunds.refunded_amount ?? 0)}</span></div>
+    <div class="refund-row"><span>Refund rate</span><span>${(refunds.refund_rate ?? 0).toFixed(2)}%</span></div>
   `;
 }
 
 function renderSummaryCards(stats = {}, productsCount) {
-  const totalProducts = productsCount ?? stats.total_products ?? 0;
-  document.getElementById('totalProducts').textContent = totalProducts;
+  document.getElementById('totalProducts').textContent = productsCount ?? stats.total_products ?? 0;
   document.getElementById('totalOrders').textContent = stats.total_orders ?? 0;
-  document.getElementById('totalRevenue').textContent = formatCurrency(
-    stats.total_revenue ?? 0
-  );
+  document.getElementById('totalRevenue').textContent = formatCurrency(stats.total_revenue ?? 0);
 }
 
 function renderRecentOrders(orders) {
   const tbody = document.getElementById('recentOrdersTable');
   if (!tbody) return;
-  if (!Array.isArray(orders) || orders.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1rem;">No recent orders</td></tr>`;
+  if (!Array.isArray(orders) || !orders.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-3)">No recent orders</td></tr>`;
     return;
   }
-
-  tbody.innerHTML = orders
-    .slice(0, 10)
-    .map((o) => {
-      const prod =
-        (o.items &&
-          o.items[0] &&
-          (o.items[0].product?.title || o.items[0].product_title)) ||
-        '-';
-      const status = o.status ?? 'N/A';
-      const total = o.total_price ?? o.total ?? '0';
-      const created = o.created_at ?? o.date ?? o.created;
-      const date = created ? new Date(created).toLocaleString() : '-';
-      const badgeClass = statusToBadgeClass(status);
-      return `
-        <tr>
-          <td><a href="./order_detail.html?id=${o.id}">${o.id}</a></td>
-          <td>${escapeHtml(prod)}</td>
-          <td><span class="status-badge ${badgeClass}">${escapeHtml(
-        status
-      )}</span></td>
-          <td style="font-weight:700">${formatCurrency(total)}</td>
-          <td>${date}</td>
-        </tr>
-      `;
-    })
-    .join('');
+  tbody.innerHTML = orders.slice(0, 10).map(o => {
+    const prod = o.items?.[0]?.product?.title || o.items?.[0]?.product_title || '-';
+    const status = o.status ?? 'N/A';
+    const date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) : '-';
+    return `
+      <tr>
+        <td><a href="./order_detail.html?id=${o.id}">#${o.id}</a></td>
+        <td>${escapeHtml(prod)}</td>
+        <td><span class="status-badge ${statusToBadgeClass(status)}">${escapeHtml(status)}</span></td>
+        <td style="font-weight:700;color:var(--primary-light)">${formatCurrency(o.total_price ?? 0)}</td>
+        <td>${date}</td>
+      </tr>`;
+  }).join('');
 }
 
 function renderSalesChart(data) {
   const ctx = document.getElementById('salesChart');
   if (!ctx) return;
+  if (!Array.isArray(data) || !data.length) {
+    ctx.parentElement.innerHTML += '<div style="text-align:center;color:var(--text-3);padding:2rem;font-size:.9rem">No sales data yet</div>';
+    return;
+  }
 
-  const labels = (data || []).map((d) => d.month || d.label || '');
-  const values = (data || []).map((d) =>
-    Number(d.revenue ?? d.amount ?? d.value ?? 0)
-  );
+  const labels = data.map(d => d.month || d.label || '');
+  const values = data.map(d => Number(d.revenue ?? d.amount ?? 0));
 
-  console.log('📊 Chart data prepared:', { labels, values });
+  // Draw chart using Canvas API directly — no external library needed
+  const parent = ctx.parentNode;
+  ctx.width = parent.offsetWidth - 48;
+  ctx.height = 260;
 
-  // ✅ Using the UMD build ensures Chart is global
-  import('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js')
-    .then((mod) => {
-      console.log('🧩 Chart.js module loaded:', mod);
-      console.log('🔍 typeof mod:', typeof mod);
-      console.log('🔍 window.Chart:', window.Chart);
+  const c = ctx.getContext('2d');
+  const W = ctx.width, H = ctx.height;
+  const pad = { top: 20, right: 20, bottom: 40, left: 60 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+  const maxVal = Math.max(...values, 1);
+  const barW = Math.min(chartW / labels.length * 0.6, 50);
+  const gap = chartW / labels.length;
 
-      const ChartLib = mod.Chart || window.Chart;
-      console.log('✅ ChartLib selected:', ChartLib);
+  // Background
+  c.fillStyle = 'transparent';
+  c.fillRect(0, 0, W, H);
 
-      if (typeof ChartLib !== 'function') {
-        console.error('🚨 ChartLib is not a constructor. Received:', ChartLib);
-        return;
-      }
+  // Grid lines
+  c.strokeStyle = 'rgba(255,255,255,0.06)';
+  c.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (chartH / 4) * i;
+    c.beginPath(); c.moveTo(pad.left, y); c.lineTo(W - pad.right, y); c.stroke();
+    const val = Math.round(maxVal - (maxVal / 4) * i);
+    c.fillStyle = 'rgba(160,160,184,0.6)';
+    c.font = '11px DM Sans, sans-serif';
+    c.textAlign = 'right';
+    c.fillText(`₹${val}`, pad.left - 8, y + 4);
+  }
 
-      // Replace canvas to avoid duplicate charts
-      const parent = ctx.parentNode;
-      const newCanvas = document.createElement('canvas');
-      newCanvas.id = ctx.id;
-      parent.replaceChild(newCanvas, ctx);
+  // Bars
+  values.forEach((val, i) => {
+    const x = pad.left + gap * i + (gap - barW) / 2;
+    const barH = (val / maxVal) * chartH;
+    const y = pad.top + chartH - barH;
 
-      console.log('🖌️ Creating chart now...');
-      new ChartLib(newCanvas, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Revenue',
-              data: values,
-              backgroundColor: 'rgba(14, 165, 164, 0.7)',
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { callback: (val) => `₹${val}` },
-            },
-          },
-        },
-      });
+    // Gradient
+    const grad = c.createLinearGradient(x, y, x, y + barH);
+    grad.addColorStop(0, 'rgba(108,99,255,0.9)');
+    grad.addColorStop(1, 'rgba(108,99,255,0.3)');
+    c.fillStyle = grad;
+    c.beginPath();
+    c.roundRect(x, y, barW, barH, 4);
+    c.fill();
 
-      console.log('✅ Chart successfully rendered.');
-    })
-    .catch((err) => {
-      console.error('❌ Failed to load Chart.js or render chart:', err);
-    });
+    // Label
+    c.fillStyle = 'rgba(160,160,184,0.8)';
+    c.font = '11px DM Sans, sans-serif';
+    c.textAlign = 'center';
+    c.fillText(labels[i], x + barW / 2, H - 10);
+  });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -226,54 +173,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     const monthly = dashboard.monthly_sales || [];
     const topProducts = dashboard.top_products || [];
     const refunds = dashboard.refunds || {};
-    const recentOrdersFromDashboard = dashboard.recent_orders ?? null;
+    const recentFromDash = dashboard.recent_orders ?? null;
 
     const [sellerProducts, sellerOrders] = await Promise.all([
       fetchSellerProducts(),
       fetchSellerOrders(),
     ]);
 
-    // Handle paginated structure from API
     let productsCount = 0;
     if (sellerProducts) {
-      if (Array.isArray(sellerProducts)) {
-        productsCount = sellerProducts.length;
-      } else if (
-        sellerProducts.results &&
-        Array.isArray(sellerProducts.results)
-      ) {
-        productsCount = sellerProducts.count ?? sellerProducts.results.length;
-      }
+      if (Array.isArray(sellerProducts)) productsCount = sellerProducts.length;
+      else if (sellerProducts.results) productsCount = sellerProducts.count ?? sellerProducts.results.length;
     }
 
     renderSummaryCards(stats, productsCount);
     renderRefundsSummary(refunds);
 
-    if (Array.isArray(topProducts) && topProducts.length)
-      renderTopProducts(topProducts);
+    if (Array.isArray(topProducts) && topProducts.length) renderTopProducts(topProducts);
     else if (Array.isArray(sellerProducts) && sellerProducts.length) {
-      const fallback = sellerProducts.slice(0, 6).map((p) => ({
-        id: p.id,
-        title: p.title,
-        image: p.image,
-        total_revenue: 0,
-        total_quantity: 0,
-      }));
-      renderTopProducts(fallback);
-    } else renderTopProducts([]);
+      renderTopProducts(sellerProducts.slice(0, 5).map(p => ({ ...p, total_revenue: 0, total_quantity: 0 })));
+    } else if (sellerProducts?.results) {
+      renderTopProducts(sellerProducts.results.slice(0, 5).map(p => ({ ...p, total_revenue: 0, total_quantity: 0 })));
+    }
 
-    const recentOrders = Array.isArray(recentOrdersFromDashboard)
-      ? recentOrdersFromDashboard
-      : Array.isArray(sellerOrders)
-      ? sellerOrders
-      : [];
+    const recentOrders = Array.isArray(recentFromDash) ? recentFromDash : Array.isArray(sellerOrders) ? sellerOrders : [];
     renderRecentOrders(recentOrders);
     renderSalesChart(monthly);
   } catch (err) {
-    console.error('Error loading seller dashboard:', err);
-    showAlert('Failed to load seller dashboard data', 'error');
-    renderRecentOrders([]);
-    renderTopProducts([]);
-    renderRefundsSummary(null);
+    console.error('Dashboard error:', err);
+    showAlert('Failed to load dashboard data', 'error');
   }
 });

@@ -3,15 +3,22 @@ import { showAlert } from './core/utils.js';
 
 const checkoutSummary = document.getElementById('checkoutSummary');
 const placeOrderBtn = document.getElementById('placeOrderBtn');
+let cartData = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   loadCheckoutSummary();
   placeOrderBtn?.addEventListener('click', placeOrder);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('cancel') === 'true') {
+    showAlert('Payment cancelled. You can try again.', 'error');
+  }
 });
 
 async function loadCheckoutSummary() {
   try {
     const cart = await api.get('/cart/');
+    cartData = cart;
     if (!cart.items?.length) {
       checkoutSummary.innerHTML = `<div class="empty">Your cart is empty.</div>`;
       if (placeOrderBtn) placeOrderBtn.disabled = true;
@@ -35,7 +42,7 @@ async function loadCheckoutSummary() {
         <span>&#8377;${cart.total_price}</span>
       </div>
     `;
-  } catch (err) {
+  } catch {
     checkoutSummary.innerHTML = `<div class="empty">Unable to load summary.</div>`;
   }
 }
@@ -50,15 +57,48 @@ async function placeOrder() {
   }
 
   placeOrderBtn.disabled = true;
-  placeOrderBtn.textContent = 'Placing Order...';
+  placeOrderBtn.textContent = 'Processing...';
+
+  // Save total before cart gets cleared
+  const totalPrice = parseFloat(cartData?.total_price || 0);
 
   try {
-    await api.post('/orders/create/', { address, payment_method: payment });
-    showAlert('Order placed successfully!', 'success');
-    setTimeout(() => window.location.href = '/orders/my_orders.html', 1000);
+    // API returns LIST of orders (one per seller)
+    const orders = await api.post('/orders/create/', {
+      address,
+      payment_method: payment,
+    });
+
+    // Get first order ID (most common case — single seller)
+    const orderList = Array.isArray(orders) ? orders : [orders];
+    const firstOrder = orderList[0];
+    const orderId = firstOrder?.id;
+
+    if (payment === 'card') {
+      placeOrderBtn.textContent = 'Redirecting to Stripe...';
+
+      // Amount in paise (INR smallest unit)
+      const amountInPaise = Math.round(totalPrice * 100);
+
+      const stripeRes = await api.post('/payments/create-checkout-session/', {
+        order_id: orderId,
+        amount: amountInPaise,
+        product_name: `CampusCart Order #${orderId}`,
+      });
+
+      if (stripeRes?.url) {
+        window.location.href = stripeRes.url;
+      } else {
+        showAlert('Payment initiation failed. Order placed as COD.', 'error');
+        setTimeout(() => window.location.href = '/orders/my_orders.html', 1500);
+      }
+    } else {
+      showAlert('Order placed successfully!', 'success');
+      setTimeout(() => window.location.href = '/orders/my_orders.html', 1000);
+    }
+
   } catch (err) {
     showAlert(err?.data?.detail || 'Failed to place order.', 'error');
-  } finally {
     placeOrderBtn.disabled = false;
     placeOrderBtn.textContent = 'Place Order →';
   }

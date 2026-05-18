@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Wishlist — CampusCart</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <style>
+      .wishlist-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem}
+      .wishlist-header h1{font-family:var(--font-display);font-size:1.8rem;font-weight:800;letter-spacing:-.03em;color:var(--text)}
+      .wishlist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem}
+      .wishlist-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:all var(--transition);position:relative}
+      .wishlist-card:hover{border-color:rgba(108,99,255,.3);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.3)}
+      .wishlist-card img{width:100%;height:180px;object-fit:cover;display:block;background:var(--bg-2)}
+      .wishlist-card-body{padding:1rem}
+      .wishlist-card-title{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text);margin:0 0 .4rem;line-height:1.3}
+      .wishlist-card-category{font-size:.75rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem}
+      .wishlist-card-price{font-family:var(--font-display);font-size:1.1rem;font-weight:800;color:var(--primary-light);margin-bottom:.75rem}
+      .wishlist-card-actions{display:flex;gap:.5rem;padding:.75rem 1rem;border-top:1px solid var(--border)}
+      .btn-move{flex:1;padding:.5rem;font-size:.82rem;border-radius:var(--radius-sm);cursor:pointer;font-weight:600;font-family:var(--font-body);transition:all var(--transition);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#4ade80}
+      .btn-move:hover{background:rgba(34,197,94,.2)}
+      .btn-remove-wish{flex:1;padding:.5rem;font-size:.82rem;border-radius:var(--radius-sm);cursor:pointer;font-weight:600;font-family:var(--font-body);transition:all var(--transition);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171}
+      .btn-remove-wish:hover{background:rgba(239,68,68,.2)}
+      .empty-wishlist{text-align:center;padding:4rem 2rem;color:var(--text-3)}
+      .empty-wishlist .empty-icon{font-size:3rem;margin-bottom:1rem}
+      .empty-wishlist h2{font-family:var(--font-display);font-size:1.3rem;color:var(--text);margin-bottom:.5rem}
+      .empty-wishlist p{font-size:.9rem;margin-bottom:1.5rem}
+    </style>
+  </head>
+  <body>
+    <header id="site-navbar"></header>
+    <main class="container">
+      <div class="wishlist-header">
+        <h1>❤️ My Wishlist</h1>
+        <button id="clearWishlistBtn" class="btn btn-ghost">Clear All</button>
+      </div>
+      <div id="wishlistContainer">
+        <div class="loading">Loading wishlist...</div>
+      </div>
+    </main>
+    <footer id="site-footer"></footer>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/wishlist.js"></script>
+  </body>
+</html>

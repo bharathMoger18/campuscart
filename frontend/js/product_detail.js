@@ -39,6 +39,9 @@ function renderProduct(p) {
           <div class="detail-rating">&#11088; ${p.average_rating ?? 0} (${p.total_reviews ?? 0})</div>
           <div class="detail-category">${escapeHtml(p.category ?? '')}</div>
         </div>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-top:.25rem;font-size:.85rem;color:var(--text-3)">
+          &#128100; Sold by <span style="color:var(--primary-light);font-weight:600;margin-left:.25rem">${escapeHtml(p.owner_email ?? 'Unknown')}</span>
+        </div>
         <div class="detail-divider"></div>
         <div class="detail-description">
           <h3>Description</h3>
@@ -50,7 +53,8 @@ function renderProduct(p) {
             <input id="qtyInput" type="number" min="1" value="1" />
             <button id="addToCartBtn" class="btn btn-primary btn-cart">&#128722; Add to Cart</button>
           </div>
-          <button id="chatSellerBtn" class="btn-chat">&#128172; Chat with Seller</button>
+          <button id="wishlistBtn" class="btn-chat" style="margin-top:.5rem">❤️ Add to Wishlist</button>
+          <button id="chatSellerBtn" class="btn-chat" style="margin-top:.5rem">💬 Chat with Seller</button>
         </div>
       </div>
     </div>
@@ -140,3 +144,22 @@ function escapeHtml(s) {
   if (s === null || s === undefined) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
+
+// Wishlist button handler - attached after renderProduct
+document.addEventListener('click', async (e) => {
+  if (e.target.id === 'wishlistBtn') {
+    try {
+      const btn = e.target;
+      btn.disabled = true;
+      btn.textContent = 'Adding...';
+      const productId = new URLSearchParams(location.search).get('id');
+      await api.post('/wishlist/add/', { product_id: productId });
+      showAlert('Added to wishlist!', 'success');
+      btn.textContent = '❤️ Added to Wishlist';
+    } catch (err) {
+      showAlert(err?.data?.message || 'Could not add to wishlist.', 'error');
+      e.target.disabled = false;
+      e.target.textContent = '❤️ Add to Wishlist';
+    }
+  }
+});

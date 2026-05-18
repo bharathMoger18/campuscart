@@ -29,7 +29,7 @@ function renderNavbar(user, cartCount = 0) {
           <a id="notifBell" href="/notifications.html" class="notif-bell">
             🔔<span id="notifCount" class="notif-badge" style="display:none">0</span>
           </a>
-          <span class="nav-user">Hi, ${escapeHtml(user.name || user.email)}</span>
+          <a href="/me.html" class="nav-user" style="text-decoration:none">Hi, ${escapeHtml(user.name || user.email)}</a>
           <button id="logoutBtn" class="btn btn-ghost" style="padding:0.4rem 0.9rem;font-size:0.85rem">Logout</button>
         ` : `
           <a href="/login.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.85rem">Login</a>

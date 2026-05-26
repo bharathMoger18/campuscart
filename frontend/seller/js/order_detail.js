@@ -223,7 +223,7 @@ function bindActions(orderId, status, refund) {
     btn.addEventListener('click', async () => {
       if (!confirm(`Mark order ${orderId} as ${newStatus}?`)) return;
       try {
-        await api.patch(`/orders/seller/orders/${orderId}/update-status/`, {
+        await api.patch(`/orders/${orderId}/update_status/`, {
           status: newStatus,
         });
         showAlert(`Order updated to ${newStatus}`, 'success');

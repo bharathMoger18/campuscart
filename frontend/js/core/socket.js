@@ -13,7 +13,7 @@ function buildWsHost() {
     const proto = u.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${proto}//${u.host}`;
   } catch (e) {
-    return 'ws://13.127.159.84';
+    return 'ws://localhost';
   }
 }
 

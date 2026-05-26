@@ -28,7 +28,7 @@ form?.addEventListener('submit', async (e) => {
     // ✅ Redirect based on role
     if (profile?.is_superuser || profile?.is_staff) {
       // Admin or staff → Django admin
-      window.location.href = 'http://13.127.159.84/admin/';
+      window.location.href = 'http://localhost/admin/';
     } else {
       // Normal user → Home page
       redirectTo('index.html', 800);
